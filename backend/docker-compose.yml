@@ -1,0 +1,24 @@
+version: '3.8'
+
+services:
+  api:
+    container_name: protopnet-api
+    restart: always
+    build:
+      context: .
+      dockerfile: Dockerfile
+    #env_file: .env.prod
+    network_mode: bridge
+    ports:
+      - "5000:5000"
+    volumes:
+      - appdata:/app
+    #  - ./100_19push0.7415.pth:/app/checkpoint.pth
+    environment:
+      PUID: 1000
+      PGID: 1000
+      TZ: Europe/Warsaw
+
+volumes:
+  appdata:
+    name: appdata

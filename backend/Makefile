@@ -3,13 +3,13 @@
 default: dev
 
 install:
-	pipenv install --dev
+	pipenv sync --dev
 
 dev:
-	ENV=development pipenv run python -m app
+	pipenv run uvicorn app.main:app --reload --port 5000
 
 prod:
-	ENV=production pipenv run python -m app
+	pipenv run uvicorn app.main:app --host 0.0.0.0 --port 5000
 
 test:
 	pipenv run pytest
@@ -43,7 +43,13 @@ clean:
 	rm -rf docs/coverage.xml
 	rm -rf docs/audit.json
 
-.PHONY: default install dev prod test coverage audit requirements black isort flake8 lint clean
+docker-build:
+	docker build -t backend:latest .
+
+docker-run:
+	docker run --rm -p 5000:5000 backend:latest
+
+.PHONY: default install dev prod test coverage audit requirements black isort flake8 lint clean docker-build docker-run
 
 .EXPORT_ALL_VARIABLES:
 PIPENV_VERBOSITY = -1

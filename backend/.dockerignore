@@ -1,0 +1,15 @@
+# Ignore everything
+**
+
+# ... except for dependencies
+!Pipfile
+!Pipfile.lock
+
+# ... and the app itself
+!app/
+
+# ... and ProtoPNet submodule
+# !protopnet/
+
+# ... and the model checkpoint
+# !100_19push0.7415.pth
