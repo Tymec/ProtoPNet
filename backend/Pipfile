@@ -1,0 +1,21 @@
+[[source]]
+url = "https://pypi.org/simple"
+verify_ssl = true
+name = "pypi"
+
+[packages]
+fastapi = "0.104.1"
+#click = "*"
+#loguru = "*"
+#orjson = "*"
+
+[dev-packages]
+black = "23.11.0"
+isort = "5.12.0"
+flake8 = "6.1.0"
+pytest = "7.4.3"
+pytest-cov = "4.1.0"
+#mypy = "*"
+
+[requires]
+python_version = "3.10"

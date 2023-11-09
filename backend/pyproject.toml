@@ -1,0 +1,35 @@
+[tool.black]
+line-length = 120
+target-version = ["py310"]
+
+[tool.isort]
+profile = "black"
+line_length = 120
+skip_gitignore = true
+multi_line_output = 3
+include_trailing_comma = true
+src_paths = ["app", "tests"]
+
+[tool.pyright]
+include = ["app", "tests"]
+strict = ["app"]
+typeCheckingMode = "basic"
+deprecateTypingAliases = true
+# reportMissingImports = "warning"
+# reportUnknownParameterType = "warning"
+# reportMissingTypeStubs = "information"
+# reportUnknownMemberType = "information"
+
+[tool.mypy]
+ignore_missing_imports = false
+disallow_untyped_defs = true
+disallow_any_unimported = true
+warn_redundant_casts = true
+warn_unused_ignores = true
+warn_return_any = true
+show_error_codes = true
+exclude = ["tests"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-ra"
