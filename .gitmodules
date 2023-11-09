@@ -1,0 +1,3 @@
+[submodule "backend/protopnet"]
+	path = backend/protopnet
+	url = git@github.com:cfchen-duke/ProtoPNet.git

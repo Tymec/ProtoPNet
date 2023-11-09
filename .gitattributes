@@ -1,0 +1,12 @@
+# Auto detect text files and perform LF normalization
+# https://pablorsk.medium.com/be-a-git-ninja-the-gitattributes-file-e58c07c9e915
+*                       text=auto
+
+# Hide docs from GitHub's language detection
+/docs/**                linguist-documentation
+
+# Set the language for these files to json5 to ensure GitHub doesn't show the comments as errors
+/.vscode/*.json         linguist-language=JSON5
+
+# Use LFS for model checkpoints
+/backend/100_19push0.7415.pth filter=lfs diff=lfs merge=lfs -text
