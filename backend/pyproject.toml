@@ -28,7 +28,7 @@ warn_redundant_casts = true
 warn_unused_ignores = true
 warn_return_any = true
 show_error_codes = true
-exclude = ["tests"]
+exclude = ["tests", "protopnet"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

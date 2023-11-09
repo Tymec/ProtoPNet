@@ -1,0 +1,44 @@
+# EditorConfig is awesome!
+
+# Mark this as the root editorconfig file
+root = true
+
+# Base ruleset for all files
+[*]
+charset = utf-8
+end_of_line = lf
+indent_size = 4
+indent_style = space
+insert_final_newline = true
+trim_trailing_whitespace = true
+max_line_length = 120
+
+# Override rules for markdown
+[*.md]
+# trailing whitespace is significant in markdown -> do not remove
+trim_trailing_whitespace = false
+
+# Override rules for python
+[*.py]
+indent_style = space
+indent_size = 4
+
+# Override rules for JSON
+[*.{json,json5,webmanifest}]
+indent_size = 2
+
+# Override rules for yaml
+[*.{yml,yaml}]
+indent_size = 2
+
+# Override rules for shell scripts
+[*.sh]
+end_of_line = lf
+
+# Override rules for commit messages
+[COMMIT_EDITMSG]
+max_line_length = 0
+
+# Override rules for makefile
+[Makefile]
+indent_style = tab
