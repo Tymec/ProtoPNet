@@ -9,4 +9,4 @@
 /.vscode/*.json         linguist-language=JSON5
 
 # Use LFS for model checkpoints
-/backend/100_19push0.7415.pth filter=lfs diff=lfs merge=lfs -text
+#/backend/100_19push0.7415.pth filter=lfs diff=lfs merge=lfs -text
