@@ -5,11 +5,9 @@
 !Pipfile
 !Pipfile.lock
 
-# ... and the app itself
+# ... and the modules
 !app/
+!net/
 
-# ... and ProtoPNet submodule
-# !protopnet/
-
-# ... and the model checkpoint
-# !100_19push0.7415.pth
+# ... and the model
+# !model/
