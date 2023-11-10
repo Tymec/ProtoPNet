@@ -408,3 +408,8 @@ pip-selfcheck.json
 .ionide
 
 # End of https://www.toptal.com/developers/gitignore/api/git,python,virtualenv,visualstudiocode,jetbrains,pycharm
+
+# Backend
+## Static files
+backend/static/*
+!backend/static/favicon.ico
