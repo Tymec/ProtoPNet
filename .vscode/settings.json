@@ -1,0 +1,36 @@
+{
+  // Python
+  "flake8.args": [
+    "--config=backend/.flake8"
+  ],
+  "black-formatter.args": [
+    "--config",
+    "backend/pyproject.toml"
+  ],
+  "isort.args": [
+    "--settings-file",
+    "backend/pyproject.toml"
+  ],
+  // "mypy.args": [
+  //   "--config-file",
+  //   "backend/mypy.ini"
+  // ],
+  "python.analysis.autoImportCompletions": true,
+  "python.analysis.inlayHints.pytestParameters": true,
+  "python.analysis.autoFormatStrings": true,
+  "[python]": {
+    "editor.defaultFormatter": "ms-python.black-formatter",
+    "editor.codeActionsOnSave": {
+      "source.organizeImports": true,
+    },
+  },
+  // Editor
+  "editor.formatOnSave": true,
+  "files.exclude": {
+    "**/.git": true,
+    "**/*.pyc": true,
+    "**/__pycache__": true,
+    "**/.mypy_cache": true,
+    "**/.pytest_cache": true,
+  },
+}
