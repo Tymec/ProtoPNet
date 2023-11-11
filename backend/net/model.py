@@ -176,7 +176,9 @@ class PPNet(nn.Module):
         min_distances = min_distances.view(-1, self.num_prototypes)
         prototype_activations = self.distance_2_similarity(min_distances)
         logits = self.last_layer(prototype_activations)
-        return logits, min_distances
+        prototype_activation_patterns = self.distance_2_similarity(distances)
+        # return logits, min_distances
+        return logits, prototype_activations, prototype_activation_patterns
 
     def push_forward(self, x):
         """this method is needed for the pushing operation"""
@@ -210,21 +212,16 @@ class PPNet(nn.Module):
         self.prototype_class_identity = self.prototype_class_identity[prototypes_to_keep, :]
 
     def __repr__(self):
-        # PPNet(self, features, img_size, prototype_shape,
-        # proto_layer_rf_info, num_classes, init_weights=True):
-        rep = (
+        return (
             "PPNet(\n"
-            "\tfeatures: {},\n"
-            "\timg_size: {},\n"
-            "\tprototype_shape: {},\n"
-            "\tproto_layer_rf_info: {},\n"
-            "\tnum_classes: {},\n"
-            "\tepsilon: {}\n"
+            f"\tfeatures: {self.features},\n"
+            f"\timg_size: {self.img_size},\n"
+            f"\tprototype_shape: {self.prototype_shape},\n"
+            f"\tproto_layer_rf_info: {self.proto_layer_rf_info},\n"
+            f"\tproto_act_fn: {self.prototype_activation_function},\n"
+            f"\tnum_classes: {self.num_classes},\n"
+            f"\tepsilon: {self.epsilon}\n"
             ")"
-        )
-
-        return rep.format(
-            self.features, self.img_size, self.prototype_shape, self.proto_layer_rf_info, self.num_classes, self.epsilon
         )
 
     def set_last_layer_incorrect_connection(self, incorrect_strength):
