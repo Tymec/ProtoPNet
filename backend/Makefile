@@ -50,7 +50,10 @@ docker-build:
 docker-run:
 	docker run --rm -p 5000:5000 backend:latest
 
-.PHONY: default install dev prod test coverage audit requirements black isort flake8 lint clean docker-build docker-run
+docker-clean:
+	docker rmi backend:latest
+
+.PHONY: default install dev prod test coverage audit requirements black isort flake8 lint clean docker-build docker-run docker-clean
 
 .EXPORT_ALL_VARIABLES:
 PIPENV_VERBOSITY = -1

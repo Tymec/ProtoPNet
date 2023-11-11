@@ -9,5 +9,8 @@
 !app/
 !net/
 
+# ... and the static files
+!static/
+
 # ... and the model
-# !model/
+!model/
