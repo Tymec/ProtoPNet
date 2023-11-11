@@ -216,7 +216,41 @@ CLASSIFICATIONS = [
 ]
 
 
+def find_high_activation_crop(activation_map, percentile=95):
+    threshold = np.percentile(activation_map, percentile)
+    mask = np.ones(activation_map.shape)
+    mask[activation_map < threshold] = 0
+    lower_y, upper_y, lower_x, upper_x = 0, 0, 0, 0
+    for i in range(mask.shape[0]):
+        if np.amax(mask[i]) > 0.5:
+            lower_y = i
+            break
+    for i in reversed(range(mask.shape[0])):
+        if np.amax(mask[i]) > 0.5:
+            upper_y = i
+            break
+    for j in range(mask.shape[1]):
+        if np.amax(mask[:, j]) > 0.5:
+            lower_x = j
+            break
+    for j in reversed(range(mask.shape[1])):
+        if np.amax(mask[:, j]) > 0.5:
+            upper_x = j
+            break
+    return lower_y, upper_y + 1, lower_x, upper_x + 1
+
+
 def load_model(model_file: Path, gpu: int) -> PPNet:
+    """
+    Loads the model from the given file.
+
+    Args:
+        model_file: Path to the model file.
+        gpu: GPU to use. If negative, use CPU.
+
+    Returns:
+        The loaded model.
+    """
     # Make sure model file exists
     if not model_file.exists():
         raise FileNotFoundError(f"Model {model_file!r} does not exist!")
@@ -235,8 +269,17 @@ def load_model(model_file: Path, gpu: int) -> PPNet:
 
 
 def sanity_check(ppnet: PPNet, info_file: Path) -> bool:
-    # !!! Should be called once (best at the start of the program) !!!
+    """
+    Checks if the given model behaves as expected.
+    Should be called after loading the model.
 
+    Args:
+        ppnet: Model to check.
+        info_file: Path to the prototype info file.
+
+    Returns:
+        True if the model behaves as expected, False otherwise.
+    """
     # Make sure info file exists
     if not info_file.exists():
         raise FileNotFoundError(f"Info file {info_file!r} does not exist!")
@@ -251,7 +294,22 @@ def sanity_check(ppnet: PPNet, info_file: Path) -> bool:
     return np.sum(max_conn == identity) == ppnet.num_prototypes
 
 
-def infer(ppnet: PPNet, image_file: Path, gpu: int) -> SimpleNamespace:
+def predict(ppnet: PPNet, image_file: Path, gpu: int) -> SimpleNamespace:
+    """
+    Predicts the class of the given image.
+
+    Args:
+        ppnet: Model to use.
+        image_file: Path to the image file.
+        gpu: GPU to use. If negative, use CPU.
+
+    Returns:
+        Namespace with the following attributes:
+            prediction: Index of the predicted class.
+            activation: Activation of the prototypes.
+            pattern: Activation pattern of the prototypes.
+            img: Original image.
+    """
     # Make sure image file exists
     if not image_file.exists():
         raise FileNotFoundError(f"Image {image_file!r} does not exist!")
@@ -294,61 +352,130 @@ def infer(ppnet: PPNet, image_file: Path, gpu: int) -> SimpleNamespace:
 
     return SimpleNamespace(
         prediction=torch.argmax(logits, dim=1)[0].item(),
-        logits=logits[0],
         activation=prototype_activations[0],
         pattern=prototype_activation_patterns[0],
         img=original_img,
     )
 
 
-def most_activated_prototypes(
-    proto: SimpleNamespace,
-    k: int,
-):
-    array_act, sorted_indices_act = torch.sort(proto.activation)
-    img_size = proto.img.shape[0]
+def heatmap_by_top_k_prototype(
+    activation: torch.Tensor,
+    activation_pattern: torch.Tensor,
+    original_img: np.ndarray,
+    k: int = 10,
+) -> list[np.ndarray]:
+    """
+    Overlays heatmaps of the top k prototypes on the original image.
+
+    Args:
+        activation: Activation of the prototypes.
+        activation_pattern: Activation pattern of the prototypes.
+        original_img: Original image.
+        k: Number of prototypes to use.
+
+    Returns:
+        List of overlayed images.
+    """
+    # Sort activations
+    array_act, sorted_indices_act = torch.sort(activation)
+
+    # Get image size
+    img_size = original_img.shape[0]
 
     # Make sure k is within bounds
     if k > len(array_act):
         k = len(array_act)
 
-    images = []
+    activation_maps: list[np.ndarray] = []
     for i in range(1, k + 1):
-        act_pattern = proto.pattern[sorted_indices_act[-i].item()].detach().cpu().numpy()
-        upsampled_act_pattern = cv2.resize(
-            act_pattern,
-            dsize=(img_size, img_size),
-            interpolation=cv2.INTER_CUBIC,
+        # Get activation index
+        act_index = sorted_indices_act[-i].item()
+
+        # Upsample activation pattern
+        act_pattern = activation_pattern[act_index].detach().cpu().numpy()
+        upsampled_activation_pattern = cv2.resize(
+            act_pattern, dsize=(img_size, img_size), interpolation=cv2.INTER_CUBIC
         )
 
-        # Overlay heatmap on original image
-        rescaled_act_pattern = upsampled_act_pattern - np.amin(upsampled_act_pattern)
-        rescaled_act_pattern = rescaled_act_pattern / np.amax(rescaled_act_pattern)
+        # Rescale activation pattern
+        rescaled_activation_pattern = upsampled_activation_pattern - np.amin(upsampled_activation_pattern)
+        rescaled_activation_pattern = rescaled_activation_pattern / np.amax(rescaled_activation_pattern)
 
-        heatmap = cv2.applyColorMap(np.uint8(255 * rescaled_act_pattern), cv2.COLORMAP_JET)
+        # Create heatmap
+        heatmap = cv2.applyColorMap(np.uint8(255 * rescaled_activation_pattern), cv2.COLORMAP_JET)
         heatmap = np.float32(heatmap) / 255
         heatmap = heatmap[..., ::-1]
 
-        overlayed_img = 0.5 * proto.img + 0.3 * heatmap
+        # Overlay heatmap on original image
+        overlayed_img = 0.5 * original_img + 0.3 * heatmap
+        activation_maps.append(overlayed_img)
 
-        images.append(overlayed_img)
+    return activation_maps
 
-    return images
+
+def box_by_top_k_prototype(
+    activation: torch.Tensor,
+    activation_pattern: torch.Tensor,
+    original_img: np.ndarray,
+    k: int = 10,
+) -> list[np.ndarray]:
+    # Sort activations
+    array_act, sorted_indices_act = torch.sort(activation)
+
+    # Get image size
+    img_size = original_img.shape[0]
+
+    # Make sure k is within bounds
+    if k > len(array_act):
+        k = len(array_act)
+
+    activation_maps: list[np.ndarray] = []
+    for i in range(1, k + 1):
+        # Get activation index
+        act_index = sorted_indices_act[-i].item()
+
+        # Upsample activation pattern
+        act_pattern = activation_pattern[act_index].detach().cpu().numpy()
+        upsampled_activation_pattern = cv2.resize(
+            act_pattern, dsize=(img_size, img_size), interpolation=cv2.INTER_CUBIC
+        )
+
+        # Get bounding box indices
+        high_act_patch_indices = find_high_activation_crop(upsampled_activation_pattern)
+
+        # Draw bounding box around activation patch on original image
+        img_bgr_uint8 = cv2.cvtColor(np.uint8(255 * original_img), cv2.COLOR_RGB2BGR)
+        cv2.rectangle(
+            img_bgr_uint8,
+            (high_act_patch_indices[2], high_act_patch_indices[0]),
+            (high_act_patch_indices[3] - 1, high_act_patch_indices[1] - 1),
+            color=(0, 255, 255),
+            thickness=2,
+        )
+        img_rgb_uint8 = img_bgr_uint8[..., ::-1]
+        img_rgb_float = np.float32(img_rgb_uint8) / 255
+        activation_maps.append(img_rgb_float)
+
+    return activation_maps
 
 
 if __name__ == "__main__":
-    img_path = Path("/root/projects/ProtoPNet/backend/static/Black_Footed_Albatross_0001_796111.jpg")
-    model_path = Path("/root/projects/ProtoPNet/backend/model/100push0.7413.pth")
-    info_path = Path("/root/projects/ProtoPNet/backend/model/bb100.npy")
+    img_path = Path("static/Black_Footed_Albatross_0001_796111.jpg")
+    model_path = Path("model/100push0.7413.pth")
+    info_path = Path("model/bb100.npy")
 
     ppnet = load_model(model_path, 0)
 
     if not sanity_check(ppnet, info_path):
         raise RuntimeError("Model did not pass the sanity check!")
 
-    proto = infer(ppnet, img_path, 0)
+    proto = predict(ppnet, img_path, 0)
     print(f"Prediction: {CLASSIFICATIONS[proto.prediction]} ({proto.prediction})")
 
-    most_activated_prototype = most_activated_prototypes(proto, 10)
-    for i, img in enumerate(most_activated_prototype):
-        plt.imsave(f"/root/projects/ProtoPNet/backend/static/tmp/{i}.jpg", img)
+    heatmaps = heatmap_by_top_k_prototype(proto.activation, proto.pattern, proto.img, 10)
+    for i, img in enumerate(heatmaps):
+        plt.imsave(f"static/actual/heat_{i}.jpg", img)
+
+    boxes = box_by_top_k_prototype(proto.activation, proto.pattern, proto.img, 10)
+    for i, img in enumerate(boxes):
+        plt.imsave(f"static/actual/box_{i}.jpg", img)

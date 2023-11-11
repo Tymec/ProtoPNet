@@ -1,45 +1,6 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from densenet_features import densenet121_features, densenet161_features, densenet169_features, densenet201_features
-from receptive_field import compute_proto_layer_rf_info_v2
-from resnet_features import (
-    resnet18_features,
-    resnet34_features,
-    resnet50_features,
-    resnet101_features,
-    resnet152_features,
-)
-from vgg_features import (
-    vgg11_bn_features,
-    vgg11_features,
-    vgg13_bn_features,
-    vgg13_features,
-    vgg16_bn_features,
-    vgg16_features,
-    vgg19_bn_features,
-    vgg19_features,
-)
-
-base_architecture_to_features = {
-    "resnet18": resnet18_features,
-    "resnet34": resnet34_features,
-    "resnet50": resnet50_features,
-    "resnet101": resnet101_features,
-    "resnet152": resnet152_features,
-    "densenet121": densenet121_features,
-    "densenet161": densenet161_features,
-    "densenet169": densenet169_features,
-    "densenet201": densenet201_features,
-    "vgg11": vgg11_features,
-    "vgg11_bn": vgg11_bn_features,
-    "vgg13": vgg13_features,
-    "vgg13_bn": vgg13_bn_features,
-    "vgg16": vgg16_features,
-    "vgg16_bn": vgg16_bn_features,
-    "vgg19": vgg19_features,
-    "vgg19_bn": vgg19_bn_features,
-}
 
 
 class PPNet(nn.Module):
@@ -294,33 +255,3 @@ class PPNet(nn.Module):
                 nn.init.constant_(m.bias, 0)
 
         self.set_last_layer_incorrect_connection(incorrect_strength=-0.5)
-
-
-def construct_PPNet(
-    base_architecture,
-    pretrained=True,
-    img_size=224,
-    prototype_shape=(2000, 512, 1, 1),
-    num_classes=200,
-    prototype_activation_function="log",
-    add_on_layers_type="bottleneck",
-):
-    features = base_architecture_to_features[base_architecture](pretrained=pretrained)
-    layer_filter_sizes, layer_strides, layer_paddings = features.conv_info()
-    proto_layer_rf_info = compute_proto_layer_rf_info_v2(
-        img_size=img_size,
-        layer_filter_sizes=layer_filter_sizes,
-        layer_strides=layer_strides,
-        layer_paddings=layer_paddings,
-        prototype_kernel_size=prototype_shape[2],
-    )
-    return PPNet(
-        features=features,
-        img_size=img_size,
-        prototype_shape=prototype_shape,
-        proto_layer_rf_info=proto_layer_rf_info,
-        num_classes=num_classes,
-        init_weights=True,
-        prototype_activation_function=prototype_activation_function,
-        add_on_layers_type=add_on_layers_type,
-    )
