@@ -26,13 +26,14 @@ requirements:
 
 black:
 	pipenv run black app/
+	pipenv run black net/
 	pipenv run black tests/
 
 isort:
-	pipenv run isort app/ tests/
+	pipenv run isort app/ net/ tests/
 
 flake8:
-	pipenv run flake8 app/ tests/
+	pipenv run flake8 app/ net/ tests/
 
 lint: isort black flake8
 
