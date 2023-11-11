@@ -1,4 +1,3 @@
-import copy
 from pathlib import Path
 from types import SimpleNamespace
 
@@ -6,12 +5,12 @@ import cv2
 import numpy as np
 import torch
 import torchvision.transforms as transforms
-from matplotlib import pyplot as plt
 from model import PPNet
 from PIL import Image
-from preprocess import mean, std, undo_preprocess_input_function
 from torch.autograd import Variable
 
+MEAN = (0.485, 0.456, 0.406)
+STD = (0.229, 0.224, 0.225)
 CLASSIFICATIONS = [
     "Black_footed_Albatross",
     "Laysan_Albatross",
@@ -216,27 +215,42 @@ CLASSIFICATIONS = [
 ]
 
 
-def find_high_activation_crop(activation_map, percentile=95):
+def find_high_activation_crop(activation_map: torch.Tensor, percentile: int = 95) -> tuple[int, int, int, int]:
+    """
+    Finds the bounding box of the activation map.
+
+    Args:
+        activation_map: Activation map.
+        percentile: Percentile to use as threshold.
+
+    Returns:
+        Tuple of (lower_y, upper_y, lower_x, upper_x).
+    """
     threshold = np.percentile(activation_map, percentile)
     mask = np.ones(activation_map.shape)
     mask[activation_map < threshold] = 0
     lower_y, upper_y, lower_x, upper_x = 0, 0, 0, 0
+
     for i in range(mask.shape[0]):
         if np.amax(mask[i]) > 0.5:
             lower_y = i
             break
+
     for i in reversed(range(mask.shape[0])):
         if np.amax(mask[i]) > 0.5:
             upper_y = i
             break
+
     for j in range(mask.shape[1]):
         if np.amax(mask[:, j]) > 0.5:
             lower_x = j
             break
+
     for j in reversed(range(mask.shape[1])):
         if np.amax(mask[:, j]) > 0.5:
             upper_x = j
             break
+
     return lower_y, upper_y + 1, lower_x, upper_x + 1
 
 
@@ -323,17 +337,24 @@ def predict(ppnet: PPNet, image_file: Path, gpu: int) -> SimpleNamespace:
     max_dist = prototype_shape[1] * prototype_shape[2] * prototype_shape[3]
 
     # Initialize transforms
+    resize = transforms.Resize((img_size, img_size))
     pre = transforms.Compose(
         [
-            transforms.Resize((img_size, img_size)),
+            # transforms.Resize((img_size, img_size)),
             transforms.ToTensor(),
-            transforms.Normalize(mean=mean, std=std),
+            transforms.Normalize(mean=MEAN, std=STD),
         ]
     )
 
-    # Load and transform image
+    # Load and resize image
     image = Image.open(image_file)
-    image_variable = Variable(pre(image).unsqueeze(0))
+    resized_image: Image.Image = resize(image)
+
+    # Save original image (scaled to [0, 1])
+    original_img = np.array(resized_image.copy()).astype(np.float32) / 255
+
+    # Normalize and prepare image
+    image_variable = Variable(pre(resized_image).unsqueeze(0))
     image_tensor = image_variable.cuda(gpu) if gpu >= 0 else image_variable.cpu()
 
     # Pass image through network
@@ -344,11 +365,6 @@ def predict(ppnet: PPNet, image_file: Path, gpu: int) -> SimpleNamespace:
     if ppnet.prototype_activation_function == "linear":
         prototype_activations = prototype_activations + max_dist
         prototype_activation_patterns = prototype_activation_patterns + max_dist
-
-    img_copy = copy.deepcopy(image_tensor)
-    original_img = undo_preprocess_input_function(img_copy[0:1])[0]
-    original_img = original_img.detach().cpu().numpy()
-    original_img = np.transpose(original_img, [1, 2, 0])
 
     return SimpleNamespace(
         prediction=torch.argmax(logits, dim=1)[0].item(),
@@ -363,7 +379,7 @@ def heatmap_by_top_k_prototype(
     activation_pattern: torch.Tensor,
     original_img: np.ndarray,
     k: int = 10,
-) -> list[np.ndarray]:
+) -> list[Image.Image]:
     """
     Overlays heatmaps of the top k prototypes on the original image.
 
@@ -386,7 +402,7 @@ def heatmap_by_top_k_prototype(
     if k > len(array_act):
         k = len(array_act)
 
-    activation_maps: list[np.ndarray] = []
+    images: list[Image.Image] = []
     for i in range(1, k + 1):
         # Get activation index
         act_index = sorted_indices_act[-i].item()
@@ -408,9 +424,13 @@ def heatmap_by_top_k_prototype(
 
         # Overlay heatmap on original image
         overlayed_img = 0.5 * original_img + 0.3 * heatmap
-        activation_maps.append(overlayed_img)
+        overlayed_img = np.uint8(255 * overlayed_img)
 
-    return activation_maps
+        # Convert to PIL image
+        im = Image.fromarray(overlayed_img, "RGB")
+        images.append(im)
+
+    return images
 
 
 def box_by_top_k_prototype(
@@ -418,7 +438,19 @@ def box_by_top_k_prototype(
     activation_pattern: torch.Tensor,
     original_img: np.ndarray,
     k: int = 10,
-) -> list[np.ndarray]:
+) -> list[Image.Image]:
+    """
+    Draws bounding boxes around the top k prototypes on the original image.
+
+    Args:
+        activation: Activation of the prototypes.
+        activation_pattern: Activation pattern of the prototypes.
+        original_img: Original image.
+        k: Number of prototypes to use.
+
+    Returns:
+        List of images with bounding boxes.
+    """
     # Sort activations
     array_act, sorted_indices_act = torch.sort(activation)
 
@@ -429,7 +461,7 @@ def box_by_top_k_prototype(
     if k > len(array_act):
         k = len(array_act)
 
-    activation_maps: list[np.ndarray] = []
+    images: list[Image.Image] = []
     for i in range(1, k + 1):
         # Get activation index
         act_index = sorted_indices_act[-i].item()
@@ -453,10 +485,12 @@ def box_by_top_k_prototype(
             thickness=2,
         )
         img_rgb_uint8 = img_bgr_uint8[..., ::-1]
-        img_rgb_float = np.float32(img_rgb_uint8) / 255
-        activation_maps.append(img_rgb_float)
 
-    return activation_maps
+        # Convert to PIL image
+        im = Image.fromarray(img_rgb_uint8, "RGB")
+        images.append(im)
+
+    return images
 
 
 if __name__ == "__main__":
@@ -473,9 +507,11 @@ if __name__ == "__main__":
     print(f"Prediction: {CLASSIFICATIONS[proto.prediction]} ({proto.prediction})")
 
     heatmaps = heatmap_by_top_k_prototype(proto.activation, proto.pattern, proto.img, 10)
-    for i, img in enumerate(heatmaps):
-        plt.imsave(f"static/actual/heat_{i}.jpg", img)
+    for i, im in enumerate(heatmaps):
+        im.save(f"static/actual/heat_{i}.jpg")
+        continue
 
     boxes = box_by_top_k_prototype(proto.activation, proto.pattern, proto.img, 10)
-    for i, img in enumerate(boxes):
-        plt.imsave(f"static/actual/box_{i}.jpg", img)
+    for i, im in enumerate(boxes):
+        im.save(f"static/actual/box_{i}.jpg")
+        continue
