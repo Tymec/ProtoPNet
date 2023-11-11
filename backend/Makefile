@@ -26,13 +26,14 @@ requirements:
 
 black:
 	pipenv run black app/
+	pipenv run black net/
 	pipenv run black tests/
 
 isort:
-	pipenv run isort app/ tests/
+	pipenv run isort app/ net/ tests/
 
 flake8:
-	pipenv run flake8 app/ tests/
+	pipenv run flake8 app/ net/ tests/
 
 lint: isort black flake8
 
@@ -49,7 +50,10 @@ docker-build:
 docker-run:
 	docker run --rm -p 5000:5000 backend:latest
 
-.PHONY: default install dev prod test coverage audit requirements black isort flake8 lint clean docker-build docker-run
+docker-clean:
+	docker rmi backend:latest
+
+.PHONY: default install dev prod test coverage audit requirements black isort flake8 lint clean docker-build docker-run docker-clean
 
 .EXPORT_ALL_VARIABLES:
 PIPENV_VERBOSITY = -1

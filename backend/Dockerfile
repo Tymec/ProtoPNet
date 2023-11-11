@@ -17,13 +17,13 @@ RUN pip install pipenv
 
 # Copy Pipfile and Pipfile.lock
 RUN mkdir -v -p /build
-ADD Pipfile Pipfile.lock /build
+ADD Pipfile Pipfile.lock /build/
 
 # Set working directory
 WORKDIR /build
 
 # Install packages specified in Pipfile.lock
-RUN pipenv sync --dev
+RUN --mount=type=cache,target=/root/.cache pipenv sync
 
 FROM python:3.11-slim as runner
 
