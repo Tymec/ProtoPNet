@@ -5,9 +5,10 @@ import cv2
 import numpy as np
 import torch
 import torchvision.transforms as transforms
-from model import PPNet
 from PIL import Image
 from torch.autograd import Variable
+
+from model import PPNet
 
 MEAN = (0.485, 0.456, 0.406)
 STD = (0.229, 0.224, 0.225)
@@ -216,8 +217,7 @@ CLASSIFICATIONS = [
 
 
 def find_high_activation_crop(activation_map: torch.Tensor, percentile: int = 95) -> tuple[int, int, int, int]:
-    """
-    Finds the bounding box of the activation map.
+    """Finds the bounding box of the activation map.
 
     Args:
         activation_map: Activation map.
@@ -255,8 +255,7 @@ def find_high_activation_crop(activation_map: torch.Tensor, percentile: int = 95
 
 
 def load_model(model_file: Path, gpu: int) -> PPNet:
-    """
-    Loads the model from the given file.
+    """Loads the model from the given file.
 
     Args:
         model_file: Path to the model file.
@@ -278,13 +277,13 @@ def load_model(model_file: Path, gpu: int) -> PPNet:
     # Load model
     ppnet: PPNet = torch.load(model_file, map_location=device)
     ppnet = ppnet.cuda(gpu) if gpu >= 0 else ppnet.cpu()
+    ppnet.eval()
 
     return ppnet
 
 
 def sanity_check(ppnet: PPNet, info_file: Path) -> bool:
-    """
-    Checks if the given model behaves as expected.
+    """Checks if the given model behaves as expected.
     Should be called after loading the model.
 
     Args:
@@ -308,39 +307,24 @@ def sanity_check(ppnet: PPNet, info_file: Path) -> bool:
     return np.sum(max_conn == identity) == ppnet.num_prototypes
 
 
-def predict(ppnet: PPNet, image_file: Path, gpu: int) -> SimpleNamespace:
-    """
-    Predicts the class of the given image.
+def preprocess_image(image_file: Path, img_size: int, gpu: int) -> torch.Tensor:
+    """Preprocesses the given image.
 
     Args:
-        ppnet: Model to use.
         image_file: Path to the image file.
-        gpu: GPU to use. If negative, use CPU.
+        img_size: Size of the image.
 
     Returns:
-        Namespace with the following attributes:
-            prediction: Index of the predicted class.
-            activation: Activation of the prototypes.
-            pattern: Activation pattern of the prototypes.
-            img: Original image.
+        Processed image.
     """
     # Make sure image file exists
     if not image_file.exists():
         raise FileNotFoundError(f"Image {image_file!r} does not exist!")
 
-    # Parallelize the model
-    ppnet_multi = torch.nn.DataParallel(ppnet)
-
-    # Get model parameters
-    img_size = ppnet_multi.module.img_size
-    prototype_shape = ppnet.prototype_shape
-    max_dist = prototype_shape[1] * prototype_shape[2] * prototype_shape[3]
-
     # Initialize transforms
     resize = transforms.Resize((img_size, img_size))
     pre = transforms.Compose(
         [
-            # transforms.Resize((img_size, img_size)),
             transforms.ToTensor(),
             transforms.Normalize(mean=MEAN, std=STD),
         ]
@@ -357,14 +341,39 @@ def predict(ppnet: PPNet, image_file: Path, gpu: int) -> SimpleNamespace:
     image_variable = Variable(pre(resized_image).unsqueeze(0))
     image_tensor = image_variable.cuda(gpu) if gpu >= 0 else image_variable.cpu()
 
+    return image_tensor, original_img
+
+
+def predict(ppnet: PPNet, image_file: Path, gpu: int) -> SimpleNamespace:
+    """Predicts the class of the given image.
+
+    Args:
+        ppnet: Model to use.
+        image_file: Path to the image file.
+        gpu: GPU to use. If negative, use CPU.
+
+    Returns:
+        Namespace with the following attributes:
+            prediction: Index of the predicted class.
+            activation: Activation of the prototypes.
+            pattern: Activation pattern of the prototypes.
+            img: Original image.
+    """
+    # Parallelize the model
+    ppnet_multi = torch.nn.DataParallel(ppnet)
+
+    # Get model parameters
+    img_size = ppnet_multi.module.img_size
+
+    # Preprocess image
+    image_tensor, original_img = preprocess_image(image_file, img_size, gpu)
+
     # Pass image through network
-    logits, min_distances = ppnet_multi(image_tensor)
-    conv_output, distances = ppnet.push_forward(image_tensor)
-    prototype_activations = ppnet.distance_2_similarity(min_distances)
-    prototype_activation_patterns = ppnet.distance_2_similarity(distances)
-    if ppnet.prototype_activation_function == "linear":
-        prototype_activations = prototype_activations + max_dist
-        prototype_activation_patterns = prototype_activation_patterns + max_dist
+    # logits, min_distances = ppnet_multi(image_tensor)
+    # conv_output, distances = ppnet.push_forward(image_tensor)
+    # prototype_activations = ppnet.distance_2_similarity(min_distances)
+    # prototype_activation_patterns = ppnet.distance_2_similarity(distances)
+    logits, prototype_activations, prototype_activation_patterns = ppnet_multi(image_tensor)
 
     return SimpleNamespace(
         prediction=torch.argmax(logits, dim=1)[0].item(),
@@ -380,8 +389,7 @@ def heatmap_by_top_k_prototype(
     original_img: np.ndarray,
     k: int = 10,
 ) -> list[Image.Image]:
-    """
-    Overlays heatmaps of the top k prototypes on the original image.
+    """Overlays heatmaps of the top k prototypes on the original image.
 
     Args:
         activation: Activation of the prototypes.
@@ -409,6 +417,7 @@ def heatmap_by_top_k_prototype(
 
         # Upsample activation pattern
         act_pattern = activation_pattern[act_index].detach().cpu().numpy()
+
         upsampled_activation_pattern = cv2.resize(
             act_pattern, dsize=(img_size, img_size), interpolation=cv2.INTER_CUBIC
         )
@@ -439,8 +448,7 @@ def box_by_top_k_prototype(
     original_img: np.ndarray,
     k: int = 10,
 ) -> list[Image.Image]:
-    """
-    Draws bounding boxes around the top k prototypes on the original image.
+    """Draws bounding boxes around the top k prototypes on the original image.
 
     Args:
         activation: Activation of the prototypes.
@@ -494,7 +502,10 @@ def box_by_top_k_prototype(
 
 
 if __name__ == "__main__":
-    img_path = Path("static/Black_Footed_Albatross_0001_796111.jpg")
+    # img_path = Path("static/001_Black_Footed_Albatross.jpg")
+    # img_path = Path("static/086_Pacific_Loon.jpg")
+    img_path = Path("static/007_Parakeet_Auklet.jpg")
+
     model_path = Path("model/100push0.7413.pth")
     info_path = Path("model/bb100.npy")
 
@@ -504,14 +515,13 @@ if __name__ == "__main__":
         raise RuntimeError("Model did not pass the sanity check!")
 
     proto = predict(ppnet, img_path, 0)
-    print(f"Prediction: {CLASSIFICATIONS[proto.prediction]} ({proto.prediction})")
+    print(f"Prediction: {CLASSIFICATIONS[proto.prediction]} ({proto.prediction + 1})")
 
     heatmaps = heatmap_by_top_k_prototype(proto.activation, proto.pattern, proto.img, 10)
-    for i, im in enumerate(heatmaps):
-        im.save(f"static/actual/heat_{i}.jpg")
-        continue
+    # for i, im in enumerate(heatmaps):
+    #    im.save(f"static/actual/heat_{i}.jpg")
 
-    boxes = box_by_top_k_prototype(proto.activation, proto.pattern, proto.img, 10)
-    for i, im in enumerate(boxes):
-        im.save(f"static/actual/box_{i}.jpg")
-        continue
+    # boxes = box_by_top_k_prototype(proto.activation, proto.pattern, proto.img, 10)
+    # for i, im in enumerate(boxes):
+    #    im.save(f"static/actual/box_{i}.jpg")
+    #    continue
