@@ -23,7 +23,7 @@ ADD Pipfile Pipfile.lock /build/
 WORKDIR /build
 
 # Install packages specified in Pipfile.lock
-RUN --mount=type=cache,target=/root/.cache pipenv sync
+RUN --mount=type=cache,target=/root/.cache pipenv install --deploy
 
 FROM python:3.11-slim as runner
 
@@ -44,11 +44,11 @@ ENV PYTHONFAULTHANDLER 1
 RUN mkdir -v -p /app
 COPY --from=builder /build/.venv/ /app/.venv
 
-# Set working directory
-WORKDIR /app
-
 # Copy source code
 COPY . /app
+
+# Set working directory
+WORKDIR /app
 
 # Create user
 RUN useradd --system --no-create-home appuser

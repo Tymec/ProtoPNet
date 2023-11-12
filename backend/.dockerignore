@@ -7,10 +7,9 @@
 
 # ... and the modules
 !app/
-!net/
 
 # ... and the static files
 !static/
 
-# ... and the model
-!model/
+# ... and the onnx model
+!model/*.onnx
