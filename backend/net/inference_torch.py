@@ -373,7 +373,7 @@ def predict(ppnet: PPNet, image_file: Path, gpu: int) -> SimpleNamespace:
     # conv_output, distances = ppnet.push_forward(image_tensor)
     # prototype_activations = ppnet.distance_2_similarity(min_distances)
     # prototype_activation_patterns = ppnet.distance_2_similarity(distances)
-    logits, prototype_activations, prototype_activation_patterns = ppnet_multi(image_tensor)
+    logits, _, prototype_activations, prototype_activation_patterns = ppnet_multi(image_tensor)
 
     return SimpleNamespace(
         prediction=torch.argmax(logits, dim=1)[0].item(),

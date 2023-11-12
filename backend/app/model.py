@@ -284,7 +284,7 @@ def predict(model: InferenceSession, image: np.ndarray) -> tuple[int, np.ndarray
     ort_outs = model.run(None, ort_inputs)
 
     # Return output
-    logits, prototype_activations, prototype_activation_patterns = ort_outs
+    logits, _, prototype_activations, prototype_activation_patterns = ort_outs
     return (
         np.argmax(logits, axis=1)[0],
         prototype_activations[0],
