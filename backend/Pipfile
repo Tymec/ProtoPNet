@@ -11,11 +11,9 @@ name = "downloadpytorch"
 [packages]
 fastapi = "0.104.1"
 numpy = "1.26.1"
-matplotlib = "3.8.1"
 pillow = "10.1.0"
 opencv-python-headless = "4.8.1.78"
-torch = {version = "2.1.0", index = "downloadpytorch"}
-torchvision = {version = "0.16.0", index = "downloadpytorch"}
+onnxruntime = "1.16.2"
 uvicorn = {version = "0.24.0.post1", extras = ["standard"]}
 
 [dev-packages]
@@ -25,7 +23,9 @@ flake8 = "6.1.0"
 pytest = "7.4.3"
 pytest-cov = "4.1.0"
 httpx = "0.25.1"
-#mypy = "*"
+torch = {version = "2.1.0", index = "downloadpytorch"}
+torchvision = {version = "0.16.0", index = "downloadpytorch"}
+onnx = "1.15.0"
 
 [requires]
 python_version = "3.11"
