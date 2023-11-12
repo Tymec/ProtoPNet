@@ -419,7 +419,7 @@ if __name__ == "__main__":
     # img_path = Path("static/086_Pacific_Loon.jpg")
     img_path = Path("static/007_Parakeet_Auklet.jpg")
 
-    model_path = Path("model/exported.onnx")
+    model_path = Path("model/100push0.7413.onnx")
 
     model = load_model(model_path)
     input_size = model.get_inputs()[0].shape  # batch, channels, height, width
