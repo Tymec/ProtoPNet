@@ -7,7 +7,7 @@ from tempfile import NamedTemporaryFile
 from os import remove
 from uuid import uuid4
 
-# ? importing like this due to the use of the loadmodel() function in the 'inference' module
+# ? importing like this due to the loadmodel() function in the 'inference' module
 import sys
 sys.path.append(str(CWD) + "/net")
 from inference import *
@@ -20,7 +20,7 @@ app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
 model_path = Path("model/100push0.7413.pth")
 model = load_model(model_path, 0)
 
-# make check
+# model check
 if not sanity_check(model, INFO_PATH):
     raise RuntimeError("Model did not pass the sanity check.")
 
@@ -63,7 +63,7 @@ async def get_prediction(image: UploadFile=File(...)):
     heatmaps = heatmap_by_top_k_prototype(proto.activation, proto.pattern, proto.img, 10)
 
     for heatmap in heatmaps:
-        uuid = str(uuid4())
+        uuid = uuid4()
         heatmap.save(STATIC_DIR / f"{uuid}.jpg")
         heatmap_urls.append(f"/static/{uuid}.jpg")
 
@@ -73,7 +73,7 @@ async def get_prediction(image: UploadFile=File(...)):
     boxes = box_by_top_k_prototype(proto.activation, proto.pattern, proto.img, 10)
 
     for box in boxes:
-        uuid = str(uuid4())
+        uuid = uuid4()
         box.save(STATIC_DIR / f"{uuid}.jpg")
         box_urls.append(f"/static/{uuid}.jpg")
 
