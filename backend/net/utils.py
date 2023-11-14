@@ -13,8 +13,8 @@ from torchvision.datasets import ImageFolder
 
 from model import PPNet
 
-# DEVICE = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-DEVICE = torch.device("cpu")
+DEVICE = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+# DEVICE = torch.device("cpu")
 BATCH_SIZE = 1
 MEAN = (0.485, 0.456, 0.406)
 STD = (0.229, 0.224, 0.225)
@@ -131,10 +131,10 @@ def export_onnx(model: PPNet, export_path: Path, dummy: torch.Tensor = None) -> 
     # )
 
     # Export the model
-    scripted_model = torch.jit.script(model)
+    # scripted_model = torch.jit.script(model)
     torch.onnx.export(
-        scripted_model,
-        # model,
+        # scripted_model,
+        model,
         dummy,
         export_path,
         export_params=True,
@@ -172,7 +172,8 @@ def export_torchscript(model: PPNet, export_path: Path, dummy: torch.Tensor = No
         module = torch.jit.trace(model, dummy)
     else:
         module = torch.jit.script(model, dummy)
-    torch.jit.optimize_for_inference(module)
+        torch.jit.optimize_for_inference(module)
+
     # torch.jit.enable_onednn_fusion(True)
     module.save(export_path)
 
@@ -357,6 +358,88 @@ def test(
     return t, correct, total
 
 
+def test_side_by_side(
+    torch_model: PPNet,
+    onnx_model: InferenceSession,
+    ts_model: torch.jit.ScriptModule,
+    dataset_path: Path,
+    img_size: int,
+    strict: bool = False,
+) -> tuple[float, float]:
+    """Tests the given models side by side.
+
+    Args:
+        torch_model: The torch model to test.
+        onnx_model: The ONNX model to test.
+        ts_model: The TorchScript model to test.
+        dataset_path: The path to the dataset to test on.
+        strict: Whether to use strict comparison or not.
+    """
+    # Make sure dataset path exists
+    if not dataset_path.exists():
+        raise FileNotFoundError(f"Dataset path {dataset_path!r} does not exist!")
+
+    # Create dataset
+    dataset = ImageFolder(
+        dataset_path,
+        transform=transforms.Compose(
+            [
+                transforms.Resize((img_size, img_size)),
+                transforms.ToTensor(),
+                transforms.Normalize(MEAN, STD),
+            ]
+        ),
+    )
+
+    # Create data loader
+    use_gpu = torch.cuda.is_available() and DEVICE != torch.device("cpu")
+    data_loader = DataLoader(
+        dataset,
+        batch_size=BATCH_SIZE,
+        shuffle=False,
+        num_workers=4,
+        pin_memory=use_gpu,
+    )
+
+    # Test models
+    total = len(data_loader)
+    same = 0
+    with torch.no_grad():
+        print("Testing...")
+
+        for i, (images, _) in enumerate(data_loader):
+            # Move images and labels to the correct device
+            images = images.to(DEVICE)
+
+            # Run models
+            torch_outputs = torch_model(images)
+            onnx_outputs = run_onnx(onnx_model, images)
+            ts_outputs = ts_model(images)
+
+            # Compare outputs
+            try:
+                assert len(torch_outputs) == len(onnx_outputs)
+                assert len(torch_outputs) == len(ts_outputs)
+                if strict:
+                    for torch_out, onnx_out, ts_out in zip(torch_outputs, onnx_outputs, ts_outputs):
+                        torch.testing.assert_close(torch_out, onnx_out)
+                        torch.testing.assert_close(torch_out, ts_out)
+                        torch.testing.assert_close(onnx_out, ts_out)
+                else:
+                    torch.testing.assert_close(torch_outputs[0], onnx_outputs[0])
+                    torch.testing.assert_close(torch_outputs[0], ts_outputs[0])
+                    torch.testing.assert_close(onnx_outputs[0], ts_outputs[0])
+            except AssertionError:
+                continue
+            same += 1
+
+            # Every 25% print progress
+            if i % (total // 4) == 0:
+                print(f"{i / total * 100:.2f}%")
+
+    return same, total
+
+
 if __name__ == "__main__":
     model_path = Path("model/100push0.7413.pth")
     model_info_path = Path("model/bb100.npy")
@@ -375,9 +458,8 @@ if __name__ == "__main__":
         exit(1)
 
     # Create dummy input
-    batch_size = 1
     img_size = torch_model.img_size
-    dummy = torch.randn(batch_size, 3, img_size, img_size).to(DEVICE)
+    dummy = torch.randn(BATCH_SIZE, 3, img_size, img_size).to(DEVICE)
 
     # Export to ONNX
     export_onnx(torch_model, onnx_path, dummy)
@@ -400,9 +482,12 @@ if __name__ == "__main__":
     ts_mean, ts_median = benchmark_model(torchscript_model, img_size)
 
     # Test models
-    torch_t, torch_correct, torch_total = test(torch_model, dataset_path, img_size)
-    onnx_t, onnx_correct, onnx_total = test(onnx_wrapper, dataset_path, img_size)
-    ts_t, ts_correct, ts_total = test(torchscript_model, dataset_path, img_size)
+    same, tot = test_side_by_side(torch_model, onnx_model, torchscript_model, dataset_path, img_size, strict=False)
+    print(f"Same (%): {same / tot * 100:.4f}%")
+    print(f"Same (n): {same} / {tot}")
+    # torch_t, torch_correct, torch_total = test(torch_model, dataset_path, img_size)
+    # onnx_t, onnx_correct, onnx_total = test(onnx_wrapper, dataset_path, img_size)
+    # ts_t, ts_correct, ts_total = test(torchscript_model, dataset_path, img_size)
 
     # Print results
     print("PyTorch:")
@@ -410,11 +495,11 @@ if __name__ == "__main__":
     print("    Benchmark:")
     print(f"        Mean: {torch_mean:.4f}s")
     print(f"        Median: {torch_median:.4f}s")
-    print("    Test:")
-    print(f"        Time: {torch_t:.4f}s")
-    print(f"        Accuracy (%): {torch_correct / torch_total * 100:.4f}%")
-    print(f"        Accuracy (num): {torch_correct} / {torch_total}")
-    print(f"        Images/s: {torch_total / torch_t:.2f}")
+    # print("    Test:")
+    # print(f"        Time: {torch_t:.4f}s")
+    # print(f"        Accuracy (%): {torch_correct / torch_total * 100:.4f}%")
+    # print(f"        Accuracy (num): {torch_correct} / {torch_total}")
+    # print(f"        Images/s: {torch_total / torch_t:.2f}")
     print()
 
     print("ONNX:")
@@ -423,11 +508,11 @@ if __name__ == "__main__":
     print("    Benchmark:")
     print(f"        Mean: {onnx_mean:.4f}s")
     print(f"        Median: {onnx_median:.4f}s")
-    print("    Test:")
-    print(f"        Time: {onnx_t:.4f}s")
-    print(f"        Accuracy (%): {onnx_correct / onnx_total * 100:.4f}%")
-    print(f"        Accuracy (num): {onnx_correct} / {onnx_total}")
-    print(f"        Images/s: {onnx_total / onnx_t:.2f}")
+    # print("    Test:")
+    # print(f"        Time: {onnx_t:.4f}s")
+    # print(f"        Accuracy (%): {onnx_correct / onnx_total * 100:.4f}%")
+    # print(f"        Accuracy (num): {onnx_correct} / {onnx_total}")
+    # print(f"        Images/s: {onnx_total / onnx_t:.2f}")
     print()
 
     print("TorchScript:")
@@ -435,9 +520,9 @@ if __name__ == "__main__":
     print("    Benchmark:")
     print(f"        Mean: {ts_mean:.4f}s")
     print(f"        Median: {ts_median:.4f}s")
-    print("    Test:")
-    print(f"        Time: {ts_t:.4f}s")
-    print(f"        Accuracy (%): {ts_correct / ts_total * 100:.4f}%")
-    print(f"        Accuracy (num): {ts_correct} / {ts_total}")
-    print(f"        Images/s: {ts_total / ts_t:.2f}")
+    # print("    Test:")
+    # print(f"        Time: {ts_t:.4f}s")
+    # print(f"        Accuracy (%): {ts_correct / ts_total * 100:.4f}%")
+    # print(f"        Accuracy (num): {ts_correct} / {ts_total}")
+    # print(f"        Images/s: {ts_total / ts_t:.2f}")
     print()

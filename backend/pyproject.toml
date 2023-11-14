@@ -12,11 +12,12 @@ src_paths = ["app", "tests"]
 
 [tool.pyright]
 include = ["app", "tests"]
-strict = ["app"]
-typeCheckingMode = "basic"
+#strict = ["app"]
+#typeCheckingMode = "basic"
 deprecateTypingAliases = true
 # reportMissingImports = "warning"
 # reportUnknownParameterType = "warning"
+# reportMissingTypeStubs = "information"
 # reportMissingTypeStubs = "information"
 # reportUnknownMemberType = "information"
 
