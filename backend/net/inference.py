@@ -1,3 +1,4 @@
+import sys
 from pathlib import Path
 from types import SimpleNamespace
 
@@ -5,9 +6,11 @@ import cv2
 import numpy as np
 import torch
 import torchvision.transforms as transforms
-from model import PPNet
+from net.model import PPNet
 from PIL import Image
 from torch.autograd import Variable
+
+sys.path.insert(0, "net/")
 
 MEAN = (0.485, 0.456, 0.406)
 STD = (0.229, 0.224, 0.225)
