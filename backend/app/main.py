@@ -1,17 +1,24 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, File, UploadFile, HTTPException
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 
 from app import *
-from net.inference import *
+from tempfile import NamedTemporaryFile
+from os import remove
+from uuid import uuid4
 
+# ? importing like this due to the use of the loadmodel() function in the 'inference' module
+import sys
+sys.path.append(str(CWD) + "/net")
+from inference import *
 
 app = FastAPI()
 
 app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
 
 # load machine
-model = load_model(MODEL_PATH)
+model_path = Path("model/100push0.7413.pth")
+model = load_model(model_path, 0)
 
 # make check
 if not sanity_check(model, INFO_PATH):
@@ -33,25 +40,49 @@ async def root():
     return {"message": "Hello World"}
 
 
-# if __name__ == "__main__":
-#     img_path = Path("static/Black_Footed_Albatross_0001_796111.jpg")
-#     model_path = Path("model/100push0.7413.pth")
-#     info_path = Path("model/bb100.npy")
+@app.post("/predict")
+async def get_prediction(image: UploadFile=File(...)):
 
-#     ppnet = load_model(model_path, 0)
+    # Check file type
+    if image.content_type not in ["image/jpeg", "image/png"]:
+        raise HTTPException(status_code=400, detail="Only JPEG OR PNG images are allowed.")
 
-#     if not sanity_check(ppnet, info_path):
-#         raise RuntimeError("Model did not pass the sanity check!")
+    contents = await image.read()   
 
-#     proto = predict(ppnet, img_path, 0)
-#     print(f"Prediction: {CLASSIFICATIONS[proto.prediction]} ({proto.prediction})")
+    # Temprarily saving the input image
+    input_file_path = STATIC_DIR / str(uuid4()) 
+    with input_file_path.open(mode="wb") as f:
+        f.write(contents)
+    
+    proto = predict(model, input_file_path, 0)
+    # Remove input image
+    remove(input_file_path)
 
-#     heatmaps = heatmap_by_top_k_prototype(proto.activation, proto.pattern, proto.img, 10)
-#     for i, im in enumerate(heatmaps):
-#         im.save(f"static/actual/heat_{i}.jpg")
-#         continue
+    # Save heatmaps
+    heatmap_urls = []
+    heatmaps = heatmap_by_top_k_prototype(proto.activation, proto.pattern, proto.img, 10)
 
-#     boxes = box_by_top_k_prototype(proto.activation, proto.pattern, proto.img, 10)
-#     for i, im in enumerate(boxes):
-#         im.save(f"static/actual/box_{i}.jpg")
-#         continue
+    for heatmap in heatmaps:
+        uuid = str(uuid4())
+        heatmap.save(STATIC_DIR / f"{uuid}.jpg")
+        heatmap_urls.append(f"/static/{uuid}.jpg")
+
+    
+    # Save boxes
+    box_urls = []
+    boxes = box_by_top_k_prototype(proto.activation, proto.pattern, proto.img, 10)
+
+    for box in boxes:
+        uuid = str(uuid4())
+        box.save(STATIC_DIR / f"{uuid}.jpg")
+        box_urls.append(f"/static/{uuid}.jpg")
+
+
+    # Response
+    return {
+        "prediction": CLASSIFICATIONS[proto.prediction],
+        "heatmap_urls": heatmap_urls,
+        "box_urls": box_urls
+    }
+
+# todo: delete static/*.jpg from time to time
