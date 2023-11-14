@@ -84,31 +84,32 @@ async def get_prediction(
     # Remove input image
     remove(input_file_path)
 
-    heatmap_urls = []
+    return_data = {
+        "prediction": CLASSIFICATIONS[proto.prediction]
+    }
 
     # Save heatmaps
     if return_type == ReturnType.heatmaps or return_type == ReturnType.both:
+        heatmap_urls = []
         heatmaps = heatmap_by_top_k_prototype(proto.activation, proto.pattern, proto.img, 10)
 
         for heatmap in heatmaps:
             heatmap_url = HEATMAP_DIR / f"{uuid4()}.jpg"
             heatmap.save(heatmap_url)  # todo: use database to save img
             heatmap_urls.append(heatmap_url.relative_to(CWD))
-
-    box_urls = []
+        return_data["heatmap_urls"] = heatmap_urls
 
     # Save boxes
     if return_type == ReturnType.boxes or return_type == ReturnType.both:
+        box_urls = []
         boxes = box_by_top_k_prototype(proto.activation, proto.pattern, proto.img, 10)
 
         for box in boxes:
             box_url = BOX_DIR / f"{uuid4()}.jpg"
             box.save(box_url)  # todo: use databse to save img
             box_urls.append(box_url.relative_to(CWD))
+        return_data["box_urls"] = box_urls
 
     # Response
-    return {
-        "prediction": CLASSIFICATIONS[proto.prediction],
-        "heatmap_urls": heatmap_urls,
-        "box_urls": box_urls,
-    }
+    return return_data
+    
