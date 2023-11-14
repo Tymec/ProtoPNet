@@ -60,7 +60,8 @@ async def get_prediction(
     image: UploadFile = File(...),
     return_type: Optional[ReturnType] = Query(
         ReturnType.both, description="Types of item to return ['both'/'heatmaps'/'boxes']"
-    )
+    ),
+    k: Optional[int] = Query(10, description="Number of items to return (of each: heatmap and box)")
 ):
     # Check file type
     if image.content_type not in [
