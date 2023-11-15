@@ -33,4 +33,5 @@
     "**/.mypy_cache": true,
     "**/.pytest_cache": true,
   },
+  "python.defaultInterpreterPath": "~/.local/share/virtualenvs/backend--xFucg3w/bin/python",
 }
