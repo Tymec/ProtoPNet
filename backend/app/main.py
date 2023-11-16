@@ -5,6 +5,10 @@ from uuid import uuid4
 from fastapi import FastAPI, File, Form, HTTPException, UploadFile
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
+from PIL import Image
+from pydantic import BaseModel
+
+from app import BOX_DIR, CWD, FAVICON_PATH, HEATMAP_DIR, INFO_PATH, MODEL_PATH, ROBOTS_PATH, STATIC_DIR
 from net.inference import (
     box_by_top_k_prototype,
     get_classification,
@@ -13,10 +17,6 @@ from net.inference import (
     predict,
     sanity_check,
 )
-from PIL import Image
-from pydantic import BaseModel
-
-from app import BOX_DIR, CWD, FAVICON_PATH, HEATMAP_DIR, INFO_PATH, MODEL_PATH, ROBOTS_PATH, STATIC_DIR
 
 
 class PredictReturnType(str, Enum):

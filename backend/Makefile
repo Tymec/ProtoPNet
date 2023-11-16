@@ -25,12 +25,10 @@ requirements:
 	pipenv requirements --dev-only > requirements-dev.txt
 
 black:
-	pipenv run black app/
-	pipenv run black net/
-	pipenv run black tests/
+	pipenv run black .
 
 isort:
-	pipenv run isort app/ net/ tests/
+	pipenv run isort .
 
 flake8:
 	pipenv run flake8 app/ net/ tests/
