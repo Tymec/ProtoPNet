@@ -74,6 +74,7 @@ async def get_prediction(
     k: int = Form(
         default=10,
         description="Number of items to return (of each: heatmap and box)",
+        gt=0,
     ),
 ) -> PredictResponse:
     # Check file type

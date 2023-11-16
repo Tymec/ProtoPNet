@@ -15,7 +15,7 @@ def image() -> tuple[str, BufferedReader]:
 
 
 def test_no_image_provided() -> None:
-    response = TestClient(app).post("/predict")
+    response = client.post("/predict")
     assert response.status_code == 422
 
     json_response = response.json()
@@ -30,14 +30,12 @@ def test_invalid_image_type() -> None:
         files={"image": ("test_image.pdf", open("tests/resources/test_image.pdf", "rb"))},
     )
     assert response.status_code == 400
-    assert response.json()["detail"] == "Only JPEG OR PNG images are allowed."
+
+    json_response = response.json()
+    assert json_response["detail"] == "Only JPEG OR PNG images are allowed."
 
 
 def test_invalid_return_type(mocker, image) -> None:
-    # Don't save images
-    mocker.patch("PIL.Image.Image.save")
-
-    # return_type should default to "both"
     response = client.post(
         "/predict",
         files={"image": image},
@@ -46,33 +44,27 @@ def test_invalid_return_type(mocker, image) -> None:
             "k": "10",
         },
     )
-    assert response.status_code == 200
+    assert response.status_code == 422
 
     json_response = response.json()
-    assert json_response["prediction"] == "Pacific Loon"
-    assert len(json_response["heatmap_urls"]) == 10
-    assert len(json_response["box_urls"]) == 10
+    assert json_response["detail"][0]["type"] == "enum"
+    assert json_response["detail"][0]["loc"] == ["body", "return_type"]
 
 
 def test_invalid_k(mocker, image) -> None:
-    # Don't save images
-    mocker.patch("PIL.Image.Image.save")
-
-    # k should default to 10
     response = client.post(
         "/predict",
         files={"image": image},
         data={
             "return_type": "both",
-            "k": "invalid",
+            "k": "-1",
         },
     )
-    assert response.status_code == 200
+    assert response.status_code == 422
 
     json_response = response.json()
-    assert json_response["prediction"] == "Pacific Loon"
-    assert len(json_response["heatmap_urls"]) == 10
-    assert len(json_response["box_urls"]) == 10
+    assert json_response["detail"][0]["type"] == "greater_than"
+    assert json_response["detail"][0]["loc"] == ["body", "k"]
 
 
 def test_only_heatmaps(mocker, image) -> None:
@@ -122,10 +114,7 @@ def test_predict(mocker, image) -> None:
     response = client.post(
         "/predict",
         files={"image": image},
-        data={
-            "return_type": "both",
-            "k": "10",
-        },
+        data={},
     )
     assert response.status_code == 200
 
