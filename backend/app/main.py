@@ -1,19 +1,20 @@
 from enum import Enum
-from os import remove
-from typing import Optional
+from io import BytesIO
 from uuid import uuid4
 
 from fastapi import FastAPI, File, HTTPException, Query, UploadFile
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 from net.inference import (
-    CLASSIFICATIONS,
     box_by_top_k_prototype,
+    get_classification,
     heatmap_by_top_k_prototype,
     load_model,
     predict,
     sanity_check,
 )
+from PIL import Image
+from pydantic import BaseModel
 
 from app import BOX_DIR, CWD, FAVICON_PATH, HEATMAP_DIR, INFO_PATH, MODEL_PATH, ROBOTS_PATH, STATIC_DIR
 
@@ -22,6 +23,12 @@ class ReturnType(str, Enum):
     heatmaps = "heatmaps"
     boxes = "boxes"
     both = "both"
+
+
+class ResponseItem(BaseModel):
+    prediction: str
+    heatmap_urls: list[str] | None
+    box_urls: list[str] | None
 
 
 app = FastAPI()
@@ -58,11 +65,10 @@ async def root():
 @app.post("/predict")
 async def get_prediction(
     image: UploadFile = File(...),
-    return_type: Optional[ReturnType] = Query(
-        ReturnType.both, description="Types of item to return ['both'/'heatmaps'/'boxes']"
-    ),
-    k: Optional[int] = Query(10, description="Number of items to return (of each: heatmap and box)")
-):
+    return_type: ReturnType
+    | None = Query(ReturnType.both, description="Types of item to return ['both'/'heatmaps'/'boxes']"),
+    k: int | None = Query(10, description="Number of items to return (of each: heatmap and box)"),
+) -> ResponseItem:
     # Check file type
     if image.content_type not in [
         "image/jpeg",
@@ -74,42 +80,45 @@ async def get_prediction(
         )
 
     contents = await image.read()
+    image_data = Image.open(BytesIO(contents))
 
-    # Temprarily saving the input image
-    input_file_path = STATIC_DIR / str(uuid4())
-    with input_file_path.open(mode="wb") as f:
-        f.write(contents)
+    pred, act, pat, img = predict(model, image_data, 0)
 
-    proto = predict(model, input_file_path, 0)
-    # Remove input image
-    remove(input_file_path)
-
-    return_data = {
-        "prediction": CLASSIFICATIONS[proto.prediction]
-    }
+    return_data = ResponseItem(
+        prediction=get_classification(pred),
+        heatmap_urls=None,
+        box_urls=None,
+    )
 
     # Save heatmaps
     if return_type == ReturnType.heatmaps or return_type == ReturnType.both:
-        heatmap_urls = []
-        heatmaps = heatmap_by_top_k_prototype(proto.activation, proto.pattern, proto.img, 10)
+        heatmaps = heatmap_by_top_k_prototype(act, pat, img, 10)
 
+        # make sure heatmap_dir exists
+        HEATMAP_DIR.mkdir(parents=True, exist_ok=True)
+
+        heatmap_urls: list[str] = []
         for heatmap in heatmaps:
             heatmap_url = HEATMAP_DIR / f"{uuid4()}.jpg"
             heatmap.save(heatmap_url)  # todo: use database to save img
-            heatmap_urls.append(heatmap_url.relative_to(CWD))
-        return_data["heatmap_urls"] = heatmap_urls
+            relative_path = heatmap_url.relative_to(CWD)
+            heatmap_urls.append(str(relative_path))
+        return_data.heatmap_urls = heatmap_urls
 
     # Save boxes
     if return_type == ReturnType.boxes or return_type == ReturnType.both:
-        box_urls = []
-        boxes = box_by_top_k_prototype(proto.activation, proto.pattern, proto.img, 10)
+        boxes = box_by_top_k_prototype(act, pat, img, 10)
 
+        # make sure box_dir exists
+        BOX_DIR.mkdir(parents=True, exist_ok=True)
+
+        box_urls: list[str] = []
         for box in boxes:
             box_url = BOX_DIR / f"{uuid4()}.jpg"
             box.save(box_url)  # todo: use databse to save img
-            box_urls.append(box_url.relative_to(CWD))
-        return_data["box_urls"] = box_urls
+            relative_path = box_url.relative_to(CWD)
+            box_urls.append(str(relative_path))
+        return_data.box_urls = box_urls
 
     # Response
     return return_data
-    

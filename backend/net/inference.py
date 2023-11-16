@@ -1,6 +1,5 @@
 import sys
 from pathlib import Path
-from types import SimpleNamespace
 
 import cv2
 import numpy as np
@@ -311,25 +310,40 @@ def sanity_check(ppnet: PPNet, info_file: Path) -> bool:
     return np.sum(max_conn == identity) == ppnet.num_prototypes
 
 
-def predict(ppnet: PPNet, image_file: Path, gpu: int) -> SimpleNamespace:
+def load_image(image_file: Path) -> Image.Image:
+    """
+    Loads the image from the given file.
+
+    Args:
+        image_file: Path to the image file.
+
+    Returns:
+        The loaded image.
+    """
+    # Make sure image file exists
+    if not image_file.exists():
+        raise FileNotFoundError(f"Image {image_file!r} does not exist!")
+
+    # Load image
+    image = Image.open(image_file)
+
+    return image
+
+
+def predict(
+    ppnet: PPNet, image: Image.Image, gpu: int
+) -> tuple[int, torch.Tensor, torch.Tensor, np.ndarray[int, np.dtype[np.float32]]]:
     """
     Predicts the class of the given image.
 
     Args:
         ppnet: Model to use.
-        image_file: Path to the image file.
+        image: Image to predict.
         gpu: GPU to use. If negative, use CPU.
 
     Returns:
-        Namespace with the following attributes:
-            prediction: Index of the predicted class.
-            activation: Activation of the prototypes.
-            pattern: Activation pattern of the prototypes.
-            img: Original image.
+        Tuple of (prediction, activation, activation pattern, original image).
     """
-    # Make sure image file exists
-    if not image_file.exists():
-        raise FileNotFoundError(f"Image {image_file!r} does not exist!")
 
     # Parallelize the model
     ppnet_multi = torch.nn.DataParallel(ppnet)
@@ -349,8 +363,7 @@ def predict(ppnet: PPNet, image_file: Path, gpu: int) -> SimpleNamespace:
         ]
     )
 
-    # Load and resize image
-    image = Image.open(image_file)
+    # Resize image
     resized_image: Image.Image = resize(image)
 
     # Save original image (scaled to [0, 1])
@@ -369,18 +382,17 @@ def predict(ppnet: PPNet, image_file: Path, gpu: int) -> SimpleNamespace:
         prototype_activations = prototype_activations + max_dist
         prototype_activation_patterns = prototype_activation_patterns + max_dist
 
-    return SimpleNamespace(
-        prediction=torch.argmax(logits, dim=1)[0].item(),
-        activation=prototype_activations[0],
-        pattern=prototype_activation_patterns[0],
-        img=original_img,
-    )
+    prediction = torch.argmax(logits, dim=1)[0].item()
+    activation = prototype_activations[0]
+    pattern = prototype_activation_patterns[0]
+
+    return prediction, activation, pattern, original_img
 
 
 def heatmap_by_top_k_prototype(
     activation: torch.Tensor,
     activation_pattern: torch.Tensor,
-    original_img: np.ndarray,
+    original_img: np.ndarray[int, np.dtype[np.float32]],
     k: int = 10,
 ) -> list[Image.Image]:
     """
@@ -439,7 +451,7 @@ def heatmap_by_top_k_prototype(
 def box_by_top_k_prototype(
     activation: torch.Tensor,
     activation_pattern: torch.Tensor,
-    original_img: np.ndarray,
+    original_img: np.ndarray[int, np.dtype[np.float32]],
     k: int = 10,
 ) -> list[Image.Image]:
     """
@@ -496,6 +508,19 @@ def box_by_top_k_prototype(
     return images
 
 
+def get_classification(idx: int) -> str:
+    """
+    Gets the classification of the given index.
+
+    Args:
+        idx: Index of the classification.
+
+    Returns:
+        Classification of the given index.
+    """
+    return CLASSIFICATIONS[idx]
+
+
 if __name__ == "__main__":
     img_path = Path("static/Black_Footed_Albatross_0001_796111.jpg")
     model_path = Path("model/100push0.7413.pth")
@@ -506,15 +531,16 @@ if __name__ == "__main__":
     if not sanity_check(ppnet, info_path):
         raise RuntimeError("Model did not pass the sanity check!")
 
-    proto = predict(ppnet, img_path, 0)
-    print(f"Prediction: {CLASSIFICATIONS[proto.prediction]} ({proto.prediction})")
+    image = load_image(img_path)
+    pred, act, pat, img = predict(ppnet, image, 0)
+    print(f"Prediction: {get_classification(pred)} ({pred})")
 
-    heatmaps = heatmap_by_top_k_prototype(proto.activation, proto.pattern, proto.img, 10)
+    heatmaps = heatmap_by_top_k_prototype(act, pat, img, 10)
     for i, im in enumerate(heatmaps):
         im.save(f"static/actual/heat_{i}.jpg")
         continue
 
-    boxes = box_by_top_k_prototype(proto.activation, proto.pattern, proto.img, 10)
+    boxes = box_by_top_k_prototype(act, pat, img, 10)
     for i, im in enumerate(boxes):
         im.save(f"static/actual/box_{i}.jpg")
         continue
