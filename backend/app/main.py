@@ -2,7 +2,7 @@ from enum import Enum
 from io import BytesIO
 from uuid import uuid4
 
-from fastapi import FastAPI, File, HTTPException, Query, UploadFile
+from fastapi import FastAPI, File, Form, HTTPException, UploadFile
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 from net.inference import (
@@ -19,17 +19,24 @@ from pydantic import BaseModel
 from app import BOX_DIR, CWD, FAVICON_PATH, HEATMAP_DIR, INFO_PATH, MODEL_PATH, ROBOTS_PATH, STATIC_DIR
 
 
-class ReturnType(str, Enum):
-    heatmaps = "heatmaps"
-    boxes = "boxes"
-    both = "both"
+class PredictReturnType(str, Enum):
+    BOTH = "both"
+    HEATMAPS = "heatmaps"
+    BOXES = "boxes"
 
 
-class ResponseItem(BaseModel):
+class PredictResponse(BaseModel):
     prediction: str
     heatmap_urls: list[str] | None
     box_urls: list[str] | None
 
+
+# load model
+model = load_model(MODEL_PATH, 0)
+
+# make sure model behaves as expected
+if not sanity_check(model, INFO_PATH):
+    raise RuntimeError("Model did not pass the sanity check.")
 
 app = FastAPI()
 
@@ -38,13 +45,6 @@ app.mount(
     StaticFiles(directory=STATIC_DIR),
     name="static",
 )
-
-# load machine
-model = load_model(MODEL_PATH, 0)
-
-# model check
-if not sanity_check(model, INFO_PATH):
-    raise RuntimeError("Model did not pass the sanity check.")
 
 
 @app.get("/favicon.ico", include_in_schema=False)
@@ -59,21 +59,23 @@ async def robots():
 
 @app.get("/")
 async def root():
-    return {"message": "Hello World"}
+    return {
+        "message": "Hello World",
+    }
 
 
 @app.post("/predict")
 async def get_prediction(
     image: UploadFile = File(...),
-    return_type: ReturnType = Query(
-        ReturnType.both,
-        description="Types of item to return ['both'/'heatmaps'/'boxes']",
+    return_type: PredictReturnType = Form(
+        default=PredictReturnType.BOTH,
+        description="Type of items to return ['both'/'heatmaps'/'boxes']",
     ),
-    k: int = Query(
-        10,
+    k: int = Form(
+        default=10,
         description="Number of items to return (of each: heatmap and box)",
     ),
-) -> ResponseItem:
+) -> PredictResponse:
     # Check file type
     if image.content_type not in [
         "image/jpeg",
@@ -89,14 +91,14 @@ async def get_prediction(
 
     pred, act, pat, img = predict(model, image_data, 0)
 
-    return_data = ResponseItem(
+    return_data = PredictResponse(
         prediction=get_classification(pred),
         heatmap_urls=None,
         box_urls=None,
     )
 
     # Save heatmaps
-    if return_type == ReturnType.heatmaps or return_type == ReturnType.both:
+    if return_type == PredictReturnType.HEATMAPS or return_type == PredictReturnType.BOTH:
         heatmaps = heatmap_by_top_k_prototype(act, pat, img, k)
 
         # make sure heatmap_dir exists
@@ -111,7 +113,7 @@ async def get_prediction(
         return_data.heatmap_urls = heatmap_urls
 
     # Save boxes
-    if return_type == ReturnType.boxes or return_type == ReturnType.both:
+    if return_type == PredictReturnType.BOXES or return_type == PredictReturnType.BOTH:
         boxes = box_by_top_k_prototype(act, pat, img, k)
 
         # make sure box_dir exists
@@ -125,5 +127,4 @@ async def get_prediction(
             box_urls.append(str(relative_path))
         return_data.box_urls = box_urls
 
-    # Response
     return return_data
