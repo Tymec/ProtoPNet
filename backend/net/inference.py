@@ -5,9 +5,10 @@ import cv2
 import numpy as np
 import torch
 import torchvision.transforms as transforms
-from net.model import PPNet
 from PIL import Image
 from torch.autograd import Variable
+
+from net.model import PPNet
 
 sys.path.insert(0, "net/")
 
