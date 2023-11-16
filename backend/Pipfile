@@ -17,6 +17,7 @@ opencv-python-headless = "4.8.1.78"
 torch = {version = "2.1.0", index = "downloadpytorch"}
 torchvision = {version = "0.16.0", index = "downloadpytorch"}
 uvicorn = {version = "0.24.0.post1", extras = ["standard"]}
+python-multipart = "0.0.6"
 
 [dev-packages]
 black = "23.11.0"
