@@ -65,9 +65,14 @@ async def root():
 @app.post("/predict")
 async def get_prediction(
     image: UploadFile = File(...),
-    return_type: ReturnType
-    | None = Query(ReturnType.both, description="Types of item to return ['both'/'heatmaps'/'boxes']"),
-    k: int | None = Query(10, description="Number of items to return (of each: heatmap and box)"),
+    return_type: ReturnType = Query(
+        ReturnType.both,
+        description="Types of item to return ['both'/'heatmaps'/'boxes']",
+    ),
+    k: int = Query(
+        10,
+        description="Number of items to return (of each: heatmap and box)",
+    ),
 ) -> ResponseItem:
     # Check file type
     if image.content_type not in [
@@ -92,7 +97,7 @@ async def get_prediction(
 
     # Save heatmaps
     if return_type == ReturnType.heatmaps or return_type == ReturnType.both:
-        heatmaps = heatmap_by_top_k_prototype(act, pat, img, 10)
+        heatmaps = heatmap_by_top_k_prototype(act, pat, img, k)
 
         # make sure heatmap_dir exists
         HEATMAP_DIR.mkdir(parents=True, exist_ok=True)
@@ -107,7 +112,7 @@ async def get_prediction(
 
     # Save boxes
     if return_type == ReturnType.boxes or return_type == ReturnType.both:
-        boxes = box_by_top_k_prototype(act, pat, img, 10)
+        boxes = box_by_top_k_prototype(act, pat, img, k)
 
         # make sure box_dir exists
         BOX_DIR.mkdir(parents=True, exist_ok=True)
