@@ -1,5 +1,5 @@
-import './App.css'
-import ImageDropzone from './components/ImageDropzone'
+import './App.css';
+import ImageDropzone from './components/ImageDropzone';
 
 enum ReturnType {
   BOTH = 'both',
@@ -8,14 +8,14 @@ enum ReturnType {
 }
 
 function predict(file: File, k: number = 10, returnType: ReturnType = ReturnType.BOTH) {
-  console.log(file)
+  console.log(file);
 
   const url =
-    `${import.meta.env.API_URL}/predict` +
+    `${import.meta.env.VITE_API_URL}/predict` +
     new URLSearchParams({
       k: k.toString(),
       return_type: returnType,
-    })
+    });
 
   fetch(url, {
     method: 'POST',
@@ -23,11 +23,11 @@ function predict(file: File, k: number = 10, returnType: ReturnType = ReturnType
   })
     .then((res) => res.json())
     .then((data) => {
-      console.log(data)
+      console.log(data);
     })
     .catch((err) => {
-      console.error(err)
-    })
+      console.error(err);
+    });
 }
 
 export default function App() {
@@ -35,5 +35,5 @@ export default function App() {
     <div className="bg-gray-700 min-h-screen m-0 p-0">
       <ImageDropzone onUpload={predict} />
     </div>
-  )
+  );
 }

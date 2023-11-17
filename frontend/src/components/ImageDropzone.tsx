@@ -1,5 +1,5 @@
 interface ImageDropzoneProps {
-  onUpload: (file: File) => void
+  onUpload: (file: File) => void;
 }
 
 export default function ImageDropzone({ onUpload }: ImageDropzoneProps) {
@@ -38,12 +38,12 @@ export default function ImageDropzone({ onUpload }: ImageDropzoneProps) {
           className="hidden"
           onChange={(e) => {
             if (e.target.files && e.target.files.length > 0) {
-              onUpload(e.target.files[0])
+              onUpload(e.target.files[0]);
             }
           }}
         />
         {/* <input id="dropzone-file" type="file" className="hidden"  /> */}
       </label>
     </div>
-  )
+  );
 }
