@@ -3,6 +3,7 @@ from io import BytesIO
 from uuid import uuid4
 
 from fastapi import FastAPI, File, Form, HTTPException, UploadFile
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 from PIL import Image
@@ -12,6 +13,7 @@ from app import BOX_DIR, CWD, FAVICON_PATH, HEATMAP_DIR, INFO_PATH, MODEL_PATH, 
 from net.inference import (
     box_by_top_k_prototype,
     get_classification,
+    get_device_id,
     heatmap_by_top_k_prototype,
     load_model,
     predict,
@@ -20,6 +22,7 @@ from net.inference import (
 
 
 class PredictReturnType(str, Enum):
+    NONE = "none"
     BOTH = "both"
     HEATMAPS = "heatmaps"
     BOXES = "boxes"
@@ -32,7 +35,8 @@ class PredictResponse(BaseModel):
 
 
 # load model
-model = load_model(MODEL_PATH, 0)
+device_id = get_device_id()
+model = load_model(MODEL_PATH, device_id)
 
 # make sure model behaves as expected
 if not sanity_check(model, INFO_PATH):
@@ -44,6 +48,14 @@ app.mount(
     "/static",
     StaticFiles(directory=STATIC_DIR),
     name="static",
+)
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:5173"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
 
@@ -69,7 +81,7 @@ async def get_prediction(
     image: UploadFile = File(...),
     return_type: PredictReturnType = Form(
         default=PredictReturnType.BOTH,
-        description="Type of items to return ['both'/'heatmaps'/'boxes']",
+        description="Type of items to return ['none/both'/'heatmaps'/'boxes']",
     ),
     k: int = Form(
         default=10,
@@ -90,7 +102,7 @@ async def get_prediction(
     contents = await image.read()
     image_data = Image.open(BytesIO(contents))
 
-    pred, act, pat, img = predict(model, image_data, 0)
+    pred, act, pat, img = predict(model, image_data, device_id)
 
     return_data = PredictResponse(
         prediction=get_classification(pred),

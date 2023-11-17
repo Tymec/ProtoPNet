@@ -122,3 +122,19 @@ def test_predict(mocker, image) -> None:
     assert json_response["prediction"] == "Pacific Loon"
     assert len(json_response["heatmap_urls"]) == 10
     assert len(json_response["box_urls"]) == 10
+
+
+def test_only_prediction(image) -> None:
+    response = client.post(
+        "/predict",
+        files={"image": image},
+        data={
+            "return_type": "none",
+        },
+    )
+    assert response.status_code == 200
+
+    json_response = response.json()
+    assert json_response["prediction"] == "Pacific Loon"
+    assert json_response["heatmap_urls"] is None
+    assert json_response["box_urls"] is None
