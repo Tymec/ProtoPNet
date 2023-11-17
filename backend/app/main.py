@@ -12,6 +12,7 @@ from app import BOX_DIR, CWD, FAVICON_PATH, HEATMAP_DIR, INFO_PATH, MODEL_PATH, 
 from net.inference import (
     box_by_top_k_prototype,
     get_classification,
+    get_device_id,
     heatmap_by_top_k_prototype,
     load_model,
     predict,
@@ -32,7 +33,8 @@ class PredictResponse(BaseModel):
 
 
 # load model
-model = load_model(MODEL_PATH, 0)
+device_id = get_device_id()
+model = load_model(MODEL_PATH, device_id)
 
 # make sure model behaves as expected
 if not sanity_check(model, INFO_PATH):
@@ -90,7 +92,7 @@ async def get_prediction(
     contents = await image.read()
     image_data = Image.open(BytesIO(contents))
 
-    pred, act, pat, img = predict(model, image_data, 0)
+    pred, act, pat, img = predict(model, image_data, device_id)
 
     return_data = PredictResponse(
         prediction=get_classification(pred),

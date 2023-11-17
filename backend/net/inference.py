@@ -218,6 +218,29 @@ CLASSIFICATIONS = [
 ]
 
 
+def get_device_id() -> int:
+    """
+    Gets the GPU/CPU to use.
+
+    Returns:
+        Positive for GPU, negative for CPU.
+    """
+    # Check if CUDA is available
+    if torch.cuda.is_available():
+        # Get number of GPUs
+        num_gpus = torch.cuda.device_count()
+
+        # Use all GPUs if available
+        if num_gpus > 1:
+            return -1
+
+        # Use GPU 0 if available
+        return 0
+
+    # Use CPU if CUDA is not available
+    return -1
+
+
 def find_high_activation_crop(activation_map: torch.Tensor, percentile: int = 95) -> tuple[int, int, int, int]:
     """
     Finds the bounding box of the activation map.
@@ -527,13 +550,14 @@ if __name__ == "__main__":
     model_path = Path("model/100push0.7413.pth")
     info_path = Path("model/bb100.npy")
 
-    ppnet = load_model(model_path, 0)
+    device_id = get_device_id()
+    ppnet = load_model(model_path, device_id)
 
     if not sanity_check(ppnet, info_path):
         raise RuntimeError("Model did not pass the sanity check!")
 
     image = load_image(img_path)
-    pred, act, pat, img = predict(ppnet, image, 0)
+    pred, act, pat, img = predict(ppnet, image, device_id)
     print(f"Prediction: {get_classification(pred)} ({pred})")
 
     heatmaps = heatmap_by_top_k_prototype(act, pat, img, 10)
