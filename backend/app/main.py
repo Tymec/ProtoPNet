@@ -21,6 +21,7 @@ from net.inference import (
 
 
 class PredictReturnType(str, Enum):
+    NONE = "none"
     BOTH = "both"
     HEATMAPS = "heatmaps"
     BOXES = "boxes"
@@ -71,7 +72,7 @@ async def get_prediction(
     image: UploadFile = File(...),
     return_type: PredictReturnType = Form(
         default=PredictReturnType.BOTH,
-        description="Type of items to return ['both'/'heatmaps'/'boxes']",
+        description="Type of items to return ['none/both'/'heatmaps'/'boxes']",
     ),
     k: int = Form(
         default=10,
