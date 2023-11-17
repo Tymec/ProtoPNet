@@ -9,16 +9,19 @@ enum ReturnType {
 }
 
 export default function App() {
+  const [optionK, setOptionK] = useState<number>(10);
+  const [optionReturnType, setOptionReturnType] = useState<ReturnType>(ReturnType.BOTH);
+
   const [prediction, setPrediction] = useState<string | undefined>(undefined);
   const [heatmapImages, setHeatmapImages] = useState<string[]>([]);
   const [boxImages, setBoxImages] = useState<string[]>([]);
 
-  function predict(file: File, k: number = 10, returnType: ReturnType = ReturnType.BOTH) {
+  function predict(file: File) {
     const url =
       `${import.meta.env.VITE_API_URL}/predict?` +
       new URLSearchParams({
-        k: k.toString(),
-        return_type: returnType,
+        k: optionK.toString(),
+        return_type: optionReturnType,
       });
   
     const formData = new FormData();
@@ -41,6 +44,33 @@ export default function App() {
  
   return (
     <div className="bg-gray-700 min-h-screen m-0 p-0">
+      <div>
+        <label htmlFor="k" className="text-gray-100">
+          K:
+          <input
+            id="k"
+            type="number"
+            min="1"
+            max="100"
+            value={optionK}
+            onChange={(e) => setOptionK(parseInt(e.target.value))}
+            className="ml-2 bg-gray-800 text-gray-100 rounded-lg p-2"
+          />
+        </label>
+        <label htmlFor="return_type" className="text-gray-100 ml-4">
+          Return type:
+          <select
+            id="return_type"
+            value={optionReturnType}
+            onChange={(e) => setOptionReturnType(e.target.value as ReturnType)}
+            className="ml-2 bg-gray-800 text-gray-100 rounded-lg p-2"
+          >
+            <option value={ReturnType.BOTH}>Both</option>
+            <option value={ReturnType.HEATMAPS}>Heatmaps</option>
+            <option value={ReturnType.BOXES}>Boxes</option>
+          </select>
+        </label>
+      </div>
       <ImageDropzone onUpload={predict} />
       {prediction && (
         <div className="flex flex-col items-center justify-center">
@@ -48,7 +78,7 @@ export default function App() {
           <p className="text-gray-400">{prediction}</p>
         </div>
       )}
-      <div className="flex flex-col items-center justify-center">
+      <div className="flex flex-row items-center justify-center flex-wrap gap-4 mb-4">
         {heatmapImages.length > 0 && heatmapImages.map((image, index) => (
           <img
             key={index}
@@ -58,7 +88,7 @@ export default function App() {
           />
         ))}
       </div>
-      <div className="flex flex-col items-center justify-center">
+      <div className="flex flex-row items-center justify-center flex-wrap gap-4">
         {boxImages.length > 0 && boxImages.map((image, index) => (
           <img
             key={index}
