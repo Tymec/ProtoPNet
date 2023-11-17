@@ -1,217 +1,220 @@
+import sys
 from pathlib import Path
-from types import SimpleNamespace
 
 import cv2
 import numpy as np
 import torch
 import torchvision.transforms as transforms
-from model import PPNet
 from PIL import Image
 from torch.autograd import Variable
+
+from net.model import PPNet
+
+sys.path.insert(0, "net/")
 
 MEAN = (0.485, 0.456, 0.406)
 STD = (0.229, 0.224, 0.225)
 CLASSIFICATIONS = [
-    "Black_footed_Albatross",
-    "Laysan_Albatross",
-    "Sooty_Albatross",
-    "Groove_billed_Ani",
-    "Crested_Auklet",
-    "Least_Auklet",
-    "Parakeet_Auklet",
-    "Rhinoceros_Auklet",
-    "Brewer_Blackbird",
-    "Red_winged_Blackbird",
-    "Rusty_Blackbird",
-    "Yellow_headed_Blackbird",
+    "Black-footed Albatross",
+    "Laysan Albatross",
+    "Sooty Albatross",
+    "Groove-billed Ani",
+    "Crested Auklet",
+    "Least Auklet",
+    "Parakeet Auklet",
+    "Rhinoceros Auklet",
+    "Brewer Blackbird",
+    "Red-winged Blackbird",
+    "Rusty Blackbird",
+    "Yellow-headed Blackbird",
     "Bobolink",
-    "Indigo_Bunting",
-    "Lazuli_Bunting",
-    "Painted_Bunting",
+    "Indigo Bunting",
+    "Lazuli Bunting",
+    "Painted Bunting",
     "Cardinal",
-    "Spotted_Catbird",
-    "Gray_Catbird",
-    "Yellow_breasted_Chat",
-    "Eastern_Towhee",
-    "Chuck_will_Widow",
-    "Brandt_Cormorant",
-    "Red_faced_Cormorant",
-    "Pelagic_Cormorant",
-    "Bronzed_Cowbird",
-    "Shiny_Cowbird",
-    "Brown_Creeper",
-    "American_Crow",
-    "Fish_Crow",
-    "Black_billed_Cuckoo",
-    "Mangrove_Cuckoo",
-    "Yellow_billed_Cuckoo",
-    "Gray_crowned_Rosy_Finch",
-    "Purple_Finch",
-    "Northern_Flicker",
-    "Acadian_Flycatcher",
-    "Great_Crested_Flycatcher",
-    "Least_Flycatcher",
-    "Olive_sided_Flycatcher",
-    "Scissor_tailed_Flycatcher",
-    "Vermilion_Flycatcher",
-    "Yellow_bellied_Flycatcher",
+    "Spotted Catbird",
+    "Gray Catbird",
+    "Yellow-breasted Chat",
+    "Eastern Towhee",
+    "Chuck-will Widow",
+    "Brandt Cormorant",
+    "Red-faced Cormorant",
+    "Pelagic Cormorant",
+    "Bronzed Cowbird",
+    "Shiny Cowbird",
+    "Brown Creeper",
+    "American Crow",
+    "Fish Crow",
+    "Black-billed Cuckoo",
+    "Mangrove Cuckoo",
+    "Yellow-billed Cuckoo",
+    "Gray-crowned Rosy Finch",
+    "Purple Finch",
+    "Northern Flicker",
+    "Acadian Flycatcher",
+    "Great Crested Flycatcher",
+    "Least Flycatcher",
+    "Olive-sided Flycatcher",
+    "Scissor-tailed Flycatcher",
+    "Vermilion Flycatcher",
+    "Yellow-bellied Flycatcher",
     "Frigatebird",
-    "Northern_Fulmar",
+    "Northern Fulmar",
     "Gadwall",
-    "American_Goldfinch",
-    "European_Goldfinch",
-    "Boat_tailed_Grackle",
-    "Eared_Grebe",
-    "Horned_Grebe",
-    "Pied_billed_Grebe",
-    "Western_Grebe",
-    "Blue_Grosbeak",
-    "Evening_Grosbeak",
-    "Pine_Grosbeak",
-    "Rose_breasted_Grosbeak",
-    "Pigeon_Guillemot",
-    "California_Gull",
-    "Glaucous_winged_Gull",
-    "Heermann_Gull",
-    "Herring_Gull",
-    "Ivory_Gull",
-    "Ring_billed_Gull",
-    "Slaty_backed_Gull",
-    "Western_Gull",
-    "Anna_Hummingbird",
-    "Ruby_throated_Hummingbird",
-    "Rufous_Hummingbird",
-    "Green_Violetear",
-    "Long_tailed_Jaeger",
-    "Pomarine_Jaeger",
-    "Blue_Jay",
-    "Florida_Jay",
-    "Green_Jay",
-    "Dark_eyed_Junco",
-    "Tropical_Kingbird",
-    "Gray_Kingbird",
-    "Belted_Kingfisher",
-    "Green_Kingfisher",
-    "Pied_Kingfisher",
-    "Ringed_Kingfisher",
-    "White_breasted_Kingfisher",
-    "Red_legged_Kittiwake",
-    "Horned_Lark",
-    "Pacific_Loon",
+    "American Goldfinch",
+    "European Goldfinch",
+    "Boat-tailed Grackle",
+    "Eared Grebe",
+    "Horned Grebe",
+    "Pied-billed Grebe",
+    "Western Grebe",
+    "Blue Grosbeak",
+    "Evening Grosbeak",
+    "Pine Grosbeak",
+    "Rose-breasted Grosbeak",
+    "Pigeon Guillemot",
+    "California Gull",
+    "Glaucous-winged Gull",
+    "Heermann Gull",
+    "Herring Gull",
+    "Ivory Gull",
+    "Ring-billed Gull",
+    "Slaty-backed Gull",
+    "Western Gull",
+    "Anna Hummingbird",
+    "Ruby-throated Hummingbird",
+    "Rufous Hummingbird",
+    "Green Violetear",
+    "Long-tailed Jaeger",
+    "Pomarine Jaeger",
+    "Blue Jay",
+    "Florida Jay",
+    "Green Jay",
+    "Dark-eyed Junco",
+    "Tropical Kingbird",
+    "Gray Kingbird",
+    "Belted Kingfisher",
+    "Green Kingfisher",
+    "Pied Kingfisher",
+    "Ringed Kingfisher",
+    "White-breasted Kingfisher",
+    "Red-legged Kittiwake",
+    "Horned Lark",
+    "Pacific Loon",
     "Mallard",
-    "Western_Meadowlark",
-    "Hooded_Merganser",
-    "Red_breasted_Merganser",
+    "Western Meadowlark",
+    "Hooded Merganser",
+    "Red-breasted Merganser",
     "Mockingbird",
     "Nighthawk",
-    "Clark_Nutcracker",
-    "White_breasted_Nuthatch",
-    "Baltimore_Oriole",
-    "Hooded_Oriole",
-    "Orchard_Oriole",
-    "Scott_Oriole",
+    "Clark Nutcracker",
+    "White-breasted Nuthatch",
+    "Baltimore Oriole",
+    "Hooded Oriole",
+    "Orchard Oriole",
+    "Scott Oriole",
     "Ovenbird",
-    "Brown_Pelican",
-    "White_Pelican",
-    "Western_Wood_Pewee",
+    "Brown Pelican",
+    "White Pelican",
+    "Western-Wood Pewee",
     "Sayornis",
-    "American_Pipit",
-    "Whip_poor_Will",
-    "Horned_Puffin",
-    "Common_Raven",
-    "White_necked_Raven",
-    "American_Redstart",
+    "American Pipit",
+    "Whip-poor Will",
+    "Horned Puffin",
+    "Common Raven",
+    "White-necked Raven",
+    "American Redstart",
     "Geococcyx",
-    "Loggerhead_Shrike",
-    "Great_Grey_Shrike",
-    "Baird_Sparrow",
-    "Black_throated_Sparrow",
-    "Brewer_Sparrow",
-    "Chipping_Sparrow",
-    "Clay_colored_Sparrow",
-    "House_Sparrow",
-    "Field_Sparrow",
-    "Fox_Sparrow",
-    "Grasshopper_Sparrow",
-    "Harris_Sparrow",
-    "Henslow_Sparrow",
-    "Le_Conte_Sparrow",
-    "Lincoln_Sparrow",
-    "Nelson_Sharp_tailed_Sparrow",
-    "Savannah_Sparrow",
-    "Seaside_Sparrow",
-    "Song_Sparrow",
-    "Tree_Sparrow",
-    "Vesper_Sparrow",
-    "White_crowned_Sparrow",
-    "White_throated_Sparrow",
-    "Cape_Glossy_Starling",
-    "Bank_Swallow",
-    "Barn_Swallow",
-    "Cliff_Swallow",
-    "Tree_Swallow",
-    "Scarlet_Tanager",
-    "Summer_Tanager",
-    "Artic_Tern",
-    "Black_Tern",
-    "Caspian_Tern",
-    "Common_Tern",
-    "Elegant_Tern",
-    "Forsters_Tern",
-    "Least_Tern",
-    "Green_tailed_Towhee",
-    "Brown_Thrasher",
-    "Sage_Thrasher",
-    "Black_capped_Vireo",
-    "Blue_headed_Vireo",
-    "Philadelphia_Vireo",
-    "Red_eyed_Vireo",
-    "Warbling_Vireo",
-    "White_eyed_Vireo",
-    "Yellow_throated_Vireo",
-    "Bay_breasted_Warbler",
-    "Black_and_white_Warbler",
-    "Black_throated_Blue_Warbler",
-    "Blue_winged_Warbler",
-    "Canada_Warbler",
-    "Cape_May_Warbler",
-    "Cerulean_Warbler",
-    "Chestnut_sided_Warbler",
-    "Golden_winged_Warbler",
-    "Hooded_Warbler",
-    "Kentucky_Warbler",
-    "Magnolia_Warbler",
-    "Mourning_Warbler",
-    "Myrtle_Warbler",
-    "Nashville_Warbler",
-    "Orange_crowned_Warbler",
-    "Palm_Warbler",
-    "Pine_Warbler",
-    "Prairie_Warbler",
-    "Prothonotary_Warbler",
-    "Swainson_Warbler",
-    "Tennessee_Warbler",
-    "Wilson_Warbler",
-    "Worm_eating_Warbler",
-    "Yellow_Warbler",
-    "Northern_Waterthrush",
-    "Louisiana_Waterthrush",
-    "Bohemian_Waxwing",
-    "Cedar_Waxwing",
-    "American_Three_toed_Woodpecker",
-    "Pileated_Woodpecker",
-    "Red_bellied_Woodpecker",
-    "Red_cockaded_Woodpecker",
-    "Red_headed_Woodpecker",
-    "Downy_Woodpecker",
-    "Bewick_Wren",
-    "Cactus_Wren",
-    "Carolina_Wren",
-    "House_Wren",
-    "Marsh_Wren",
-    "Rock_Wren",
-    "Winter_Wren",
-    "Common_Yellowthroat",
+    "Loggerhead Shrike",
+    "Great Grey Shrike",
+    "Baird Sparrow",
+    "Black-throated Sparrow",
+    "Brewer Sparrow",
+    "Chipping Sparrow",
+    "Clay-colored Sparrow",
+    "House Sparrow",
+    "Field Sparrow",
+    "Fox Sparrow",
+    "Grasshopper Sparrow",
+    "Harris Sparrow",
+    "Henslow Sparrow",
+    "Le Conte Sparrow",
+    "Lincoln Sparrow",
+    "Nelson Sharp-tailed Sparrow",
+    "Savannah Sparrow",
+    "Seaside Sparrow",
+    "Song Sparrow",
+    "Tree Sparrow",
+    "Vesper Sparrow",
+    "White-crowned Sparrow",
+    "White-throated Sparrow",
+    "Cape Glossy Starling",
+    "Bank Swallow",
+    "Barn Swallow",
+    "Cliff Swallow",
+    "Tree Swallow",
+    "Scarlet Tanager",
+    "Summer Tanager",
+    "Artic Tern",
+    "Black Tern",
+    "Caspian Tern",
+    "Common Tern",
+    "Elegant Tern",
+    "Forsters Tern",
+    "Least Tern",
+    "Green-tailed Towhee",
+    "Brown Thrasher",
+    "Sage Thrasher",
+    "Black-capped Vireo",
+    "Blue-headed Vireo",
+    "Philadelphia Vireo",
+    "Red-eyed Vireo",
+    "Warbling Vireo",
+    "White-eyed Vireo",
+    "Yellow-throated Vireo",
+    "Bay-breasted Warbler",
+    "Black-and-white Warbler",
+    "Black-throated Blue Warbler",
+    "Blue-winged Warbler",
+    "Canada Warbler",
+    "Cape May Warbler",
+    "Cerulean Warbler",
+    "Chestnut-sided Warbler",
+    "Golden-winged Warbler",
+    "Hooded Warbler",
+    "Kentucky Warbler",
+    "Magnolia Warbler",
+    "Mourning Warbler",
+    "Myrtle Warbler",
+    "Nashville Warbler",
+    "Orange-crowned Warbler",
+    "Palm Warbler",
+    "Pine Warbler",
+    "Prairie Warbler",
+    "Prothonotary Warbler",
+    "Swainson Warbler",
+    "Tennessee Warbler",
+    "Wilson Warbler",
+    "Worm-eating Warbler",
+    "Yellow Warbler",
+    "Northern Waterthrush",
+    "Louisiana Waterthrush",
+    "Bohemian Waxwing",
+    "Cedar Waxwing",
+    "American Three-toed Woodpecker",
+    "Pileated Woodpecker",
+    "Red-bellied Woodpecker",
+    "Red-cockaded Woodpecker",
+    "Red-headed Woodpecker",
+    "Downy Woodpecker",
+    "Bewick Wren",
+    "Cactus Wren",
+    "Carolina Wren",
+    "House Wren",
+    "Marsh Wren",
+    "Rock Wren",
+    "Winter Wren",
+    "Common Yellowthroat",
 ]
 
 
@@ -308,25 +311,40 @@ def sanity_check(ppnet: PPNet, info_file: Path) -> bool:
     return np.sum(max_conn == identity) == ppnet.num_prototypes
 
 
-def predict(ppnet: PPNet, image_file: Path, gpu: int) -> SimpleNamespace:
+def load_image(image_file: Path) -> Image.Image:
+    """
+    Loads the image from the given file.
+
+    Args:
+        image_file: Path to the image file.
+
+    Returns:
+        The loaded image.
+    """
+    # Make sure image file exists
+    if not image_file.exists():
+        raise FileNotFoundError(f"Image {image_file!r} does not exist!")
+
+    # Load image
+    image = Image.open(image_file)
+
+    return image
+
+
+def predict(
+    ppnet: PPNet, image: Image.Image, gpu: int
+) -> tuple[int, torch.Tensor, torch.Tensor, np.ndarray[int, np.dtype[np.float32]]]:
     """
     Predicts the class of the given image.
 
     Args:
         ppnet: Model to use.
-        image_file: Path to the image file.
+        image: Image to predict.
         gpu: GPU to use. If negative, use CPU.
 
     Returns:
-        Namespace with the following attributes:
-            prediction: Index of the predicted class.
-            activation: Activation of the prototypes.
-            pattern: Activation pattern of the prototypes.
-            img: Original image.
+        Tuple of (prediction, activation, activation pattern, original image).
     """
-    # Make sure image file exists
-    if not image_file.exists():
-        raise FileNotFoundError(f"Image {image_file!r} does not exist!")
 
     # Parallelize the model
     ppnet_multi = torch.nn.DataParallel(ppnet)
@@ -346,8 +364,7 @@ def predict(ppnet: PPNet, image_file: Path, gpu: int) -> SimpleNamespace:
         ]
     )
 
-    # Load and resize image
-    image = Image.open(image_file)
+    # Resize image
     resized_image: Image.Image = resize(image)
 
     # Save original image (scaled to [0, 1])
@@ -366,18 +383,17 @@ def predict(ppnet: PPNet, image_file: Path, gpu: int) -> SimpleNamespace:
         prototype_activations = prototype_activations + max_dist
         prototype_activation_patterns = prototype_activation_patterns + max_dist
 
-    return SimpleNamespace(
-        prediction=torch.argmax(logits, dim=1)[0].item(),
-        activation=prototype_activations[0],
-        pattern=prototype_activation_patterns[0],
-        img=original_img,
-    )
+    prediction = torch.argmax(logits, dim=1)[0].item()
+    activation = prototype_activations[0]
+    pattern = prototype_activation_patterns[0]
+
+    return prediction, activation, pattern, original_img
 
 
 def heatmap_by_top_k_prototype(
     activation: torch.Tensor,
     activation_pattern: torch.Tensor,
-    original_img: np.ndarray,
+    original_img: np.ndarray[int, np.dtype[np.float32]],
     k: int = 10,
 ) -> list[Image.Image]:
     """
@@ -436,7 +452,7 @@ def heatmap_by_top_k_prototype(
 def box_by_top_k_prototype(
     activation: torch.Tensor,
     activation_pattern: torch.Tensor,
-    original_img: np.ndarray,
+    original_img: np.ndarray[int, np.dtype[np.float32]],
     k: int = 10,
 ) -> list[Image.Image]:
     """
@@ -493,6 +509,19 @@ def box_by_top_k_prototype(
     return images
 
 
+def get_classification(idx: int) -> str:
+    """
+    Gets the classification of the given index.
+
+    Args:
+        idx: Index of the classification.
+
+    Returns:
+        Classification of the given index.
+    """
+    return CLASSIFICATIONS[idx]
+
+
 if __name__ == "__main__":
     img_path = Path("static/Black_Footed_Albatross_0001_796111.jpg")
     model_path = Path("model/100push0.7413.pth")
@@ -503,15 +532,16 @@ if __name__ == "__main__":
     if not sanity_check(ppnet, info_path):
         raise RuntimeError("Model did not pass the sanity check!")
 
-    proto = predict(ppnet, img_path, 0)
-    print(f"Prediction: {CLASSIFICATIONS[proto.prediction]} ({proto.prediction})")
+    image = load_image(img_path)
+    pred, act, pat, img = predict(ppnet, image, 0)
+    print(f"Prediction: {get_classification(pred)} ({pred})")
 
-    heatmaps = heatmap_by_top_k_prototype(proto.activation, proto.pattern, proto.img, 10)
+    heatmaps = heatmap_by_top_k_prototype(act, pat, img, 10)
     for i, im in enumerate(heatmaps):
         im.save(f"static/actual/heat_{i}.jpg")
         continue
 
-    boxes = box_by_top_k_prototype(proto.activation, proto.pattern, proto.img, 10)
+    boxes = box_by_top_k_prototype(act, pat, img, 10)
     for i, im in enumerate(boxes):
         im.save(f"static/actual/box_{i}.jpg")
         continue
