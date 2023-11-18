@@ -6,19 +6,11 @@ from fastapi import FastAPI, File, Form, HTTPException, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
+from net.inference import box_by_top_k_prototype, get_classification, heatmap_by_top_k_prototype, load_model, predict
 from PIL import Image
 from pydantic import BaseModel
 
-from app import BOX_DIR, CWD, FAVICON_PATH, HEATMAP_DIR, INFO_PATH, MODEL_PATH, ROBOTS_PATH, STATIC_DIR
-from net.inference import (
-    box_by_top_k_prototype,
-    get_classification,
-    get_device_id,
-    heatmap_by_top_k_prototype,
-    load_model,
-    predict,
-    sanity_check,
-)
+from app import BOX_DIR, CWD, FAVICON_PATH, HEATMAP_DIR, MODEL_INFO_PATH, MODEL_PATH, ROBOTS_PATH, STATIC_DIR
 
 
 class PredictReturnType(str, Enum):
@@ -35,12 +27,7 @@ class PredictResponse(BaseModel):
 
 
 # load model
-device_id = get_device_id()
-model = load_model(MODEL_PATH, device_id)
-
-# make sure model behaves as expected
-if not sanity_check(model, INFO_PATH):
-    raise RuntimeError("Model did not pass the sanity check.")
+model = load_model(MODEL_PATH, MODEL_INFO_PATH)
 
 app = FastAPI()
 
@@ -102,7 +89,7 @@ async def get_prediction(
     contents = await image.read()
     image_data = Image.open(BytesIO(contents))
 
-    pred, act, pat, img = predict(model, image_data, device_id)
+    pred, act, pat, img = predict(model, image_data)
 
     return_data = PredictResponse(
         prediction=get_classification(pred),

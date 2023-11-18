@@ -105,22 +105,22 @@ class PPNet(nn.Module):
         return x
 
     @staticmethod
-    def _weighted_l2_convolution(input, filter, weights):
+    def _weighted_l2_convolution(inp, filt, weights):
         """
         input of shape N * c * h * w
         filter of shape P * c * h1 * w1
         weight of shape P * c * h1 * w1
         """
-        input2 = input**2
+        input2 = inp**2
         input_patch_weighted_norm2 = F.conv2d(input=input2, weight=weights)
 
-        filter2 = filter**2
+        filter2 = filt**2
         weighted_filter2 = filter2 * weights
         filter_weighted_norm2 = torch.sum(weighted_filter2, dim=(1, 2, 3))
         filter_weighted_norm2_reshape = filter_weighted_norm2.view(-1, 1, 1)
 
-        weighted_filter = filter * weights
-        weighted_inner_product = F.conv2d(input=input, weight=weighted_filter)
+        weighted_filter = filt * weights
+        weighted_inner_product = F.conv2d(input=inp, weight=weighted_filter)
 
         # use broadcast
         intermediate_result = -2 * weighted_inner_product + filter_weighted_norm2_reshape
@@ -163,7 +163,8 @@ class PPNet(nn.Module):
         elif self.prototype_activation_function == "linear":
             return -distances
         else:
-            return self.prototype_activation_function(distances)
+            # return self.prototype_activation_function(distances)
+            return distances
 
     def forward(self, x):
         distances = self.prototype_distances(x)
@@ -172,11 +173,16 @@ class PPNet(nn.Module):
         because we need to return min_distances
         """
         # global min pooling
-        min_distances = -F.max_pool2d(-distances, kernel_size=(distances.size()[2], distances.size()[3]))
+        size = distances.size()
+        kernel_size = (size[2], size[3])
+        # kernel_size = (7, 7) # needed for ONNX export if we want dynamic batch size
+        min_distances = -F.max_pool2d(-distances, kernel_size=kernel_size)
         min_distances = min_distances.view(-1, self.num_prototypes)
         prototype_activations = self.distance_2_similarity(min_distances)
         logits = self.last_layer(prototype_activations)
-        return logits, min_distances
+        prototype_activation_patterns = self.distance_2_similarity(distances)
+        # return logits, min_distances
+        return logits, min_distances, prototype_activations, prototype_activation_patterns
 
     def push_forward(self, x):
         """this method is needed for the pushing operation"""
@@ -210,21 +216,16 @@ class PPNet(nn.Module):
         self.prototype_class_identity = self.prototype_class_identity[prototypes_to_keep, :]
 
     def __repr__(self):
-        # PPNet(self, features, img_size, prototype_shape,
-        # proto_layer_rf_info, num_classes, init_weights=True):
-        rep = (
+        return (
             "PPNet(\n"
-            "\tfeatures: {},\n"
-            "\timg_size: {},\n"
-            "\tprototype_shape: {},\n"
-            "\tproto_layer_rf_info: {},\n"
-            "\tnum_classes: {},\n"
-            "\tepsilon: {}\n"
+            f"\tfeatures: {self.features},\n"
+            f"\timg_size: {self.img_size},\n"
+            f"\tprototype_shape: {self.prototype_shape},\n"
+            f"\tproto_layer_rf_info: {self.proto_layer_rf_info},\n"
+            f"\tproto_act_fn: {self.prototype_activation_function},\n"
+            f"\tnum_classes: {self.num_classes},\n"
+            f"\tepsilon: {self.epsilon}\n"
             ")"
-        )
-
-        return rep.format(
-            self.features, self.img_size, self.prototype_shape, self.proto_layer_rf_info, self.num_classes, self.epsilon
         )
 
     def set_last_layer_incorrect_connection(self, incorrect_strength):
