@@ -1,4 +1,3 @@
-import time
 import warnings
 from collections.abc import Iterator
 from pathlib import Path
@@ -354,7 +353,7 @@ def predict(
     img_tensor = torch.from_numpy(img).to(DEVICE)
     logits, _, prototype_activations, prototype_activation_patterns = model(img_tensor)
 
-    # Convert to numpy arrays
+    # Convert to numpy arrays (since we'll be using numpy from now on)
     logits = logits.cpu().detach().numpy()
     prototype_activations = prototype_activations.cpu().detach().numpy()
     prototype_activation_patterns = prototype_activation_patterns.cpu().detach().numpy()
@@ -365,8 +364,6 @@ def predict(
 
     # Return outputs
     return (
-        # torch.argmax(logits, dim=1)[0].item(),
-        # torch.softmax(logits, dim=1)[0].cpu().detach().numpy(),
         np.argmax(logits, axis=1)[0],
         confidence[0],
         prototype_activations[0],
@@ -528,47 +525,3 @@ def get_classification(idx: int) -> str:
         Classification of the given index.
     """
     return CLASSIFICATIONS[idx]
-
-
-if __name__ == "__main__":
-    img_path = Path("static/Great_Crested_Flycatcher_0051_29530.jpg")
-    model_state_path = Path("model/100push0.7413.state.pth")
-    info_path = Path("model/bb100.npy")
-    heatmaps_dir = Path("static/heatmap")
-    boxes_dir = Path("static/boxmap")
-
-    # Load model
-    ppnet = load_model(model_state_path, info_path)
-
-    # Make sure image exists
-    if not img_path.exists():
-        raise FileNotFoundError(f"Image {img_path!r} does not exist!")
-
-    # Warmup
-    print("Warming up...")
-    r = 100
-    for test_img_path in Path("static/dataset/").glob("**/*.jpg"):
-        if r == 0:
-            break
-        predict(ppnet, Image.open(test_img_path))
-        r -= 1
-
-    # Predict image
-    start_t = time.time()
-    pred, con, act, pat, img = predict(ppnet, Image.open(img_path))
-    print(f"Prediction: {get_classification(pred)} ({pred})")
-    print(f"Time: {time.time() - start_t:.4f}s")
-
-    # Save heatmaps
-    heatmaps_dir.mkdir(parents=True, exist_ok=True)
-    heatmaps = heatmap_by_top_k_prototype(act, pat, img, 1)
-    for i, im in enumerate(heatmaps):
-        im.save(heatmaps_dir / f"heat_{i}.jpg")
-        continue
-
-    # Save boxes
-    boxes_dir.mkdir(parents=True, exist_ok=True)
-    boxes = box_by_top_k_prototype(act, pat, img, 1)
-    for i, im in enumerate(boxes):
-        im.save(boxes_dir / f"box_{i}.jpg")
-        continue
