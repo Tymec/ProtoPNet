@@ -3,18 +3,26 @@
 default: dev
 
 install:
-	@true
+	pnpm install
 
 dev:
-	@true
+	pnpm dev
 
-prod:
-	@true
+build:
+	pnpm build
 
 test:
-	@true
+	pnpm test
+
+eslint:
+	pnpm lint
+
+format:
+	pnpm format
+
+lint: eslint format
 
 clean:
-	@true
+	rm -rf dist/	
 
-.PHONY: default install dev prod test clean
+.PHONY: default install dev build test eslint format lint

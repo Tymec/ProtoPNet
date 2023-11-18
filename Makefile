@@ -14,10 +14,6 @@ test:
 	$(MAKE) -C backend test
 	$(MAKE) -C frontend test
 
-clean:
-	$(MAKE) -C backend clean
-	$(MAKE) -C frontend clean
-
 %:
 	@true
 
