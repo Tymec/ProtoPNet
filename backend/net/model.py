@@ -163,8 +163,8 @@ class PPNet(nn.Module):
         elif self.prototype_activation_function == "linear":
             return -distances
         else:
-            # return self.prototype_activation_function(distances)
-            return distances
+            # return distances
+            return self.prototype_activation_function(distances)
 
     def forward(self, x):
         distances = self.prototype_distances(x)
