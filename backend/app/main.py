@@ -6,7 +6,14 @@ from fastapi import FastAPI, File, Form, HTTPException, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
-from net.inference import box_by_top_k_prototype, get_classification, heatmap_by_top_k_prototype, load_model, predict
+from net.inference import (
+    box_by_top_k_prototype,
+    get_classification,
+    get_confidence_map,
+    heatmap_by_top_k_prototype,
+    load_model,
+    predict,
+)
 from PIL import Image
 from pydantic import BaseModel
 
@@ -22,6 +29,7 @@ class PredictReturnType(str, Enum):
 
 class PredictResponse(BaseModel):
     prediction: str
+    confidence: dict[str, float]
     heatmap_urls: list[str] | None
     box_urls: list[str] | None
 
@@ -89,10 +97,12 @@ async def get_prediction(
     contents = await image.read()
     image_data = Image.open(BytesIO(contents))
 
-    pred, act, pat, img = predict(model, image_data)
+    pred, con, act, pat, img = predict(model, image_data)
+    confidence_map = get_confidence_map(con)
 
     return_data = PredictResponse(
         prediction=get_classification(pred),
+        confidence=confidence_map,
         heatmap_urls=None,
         box_urls=None,
     )

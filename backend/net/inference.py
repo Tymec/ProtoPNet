@@ -240,11 +240,11 @@ def load_model(state_path: Path, info_file: Path = None) -> PPNet:
     # Load state dict
     state_dict = torch.load(state_path, map_location=DEVICE)
 
-    # Create features
+    # Create features from state dict
     features = VGG_features(state_dict["features_cfg"]).to(DEVICE)
     features.load_state_dict(state_dict["features"])
 
-    # Create model
+    # Create model from state dict
     model = PPNet(
         features,
         state_dict["img_size"],
@@ -259,12 +259,12 @@ def load_model(state_path: Path, info_file: Path = None) -> PPNet:
 
     # If info file is not specified, warn user
     if info_file is None:
-        warnings.warn("No info file specified! Skipping sanity check...")
+        warnings.warn("No info file specified! Skipping sanity check... (the model might not behave as expected!)")
         return model
 
     # Make sure model behaves as expected
     if not sanity_check(model, info_file):
-        raise RuntimeError("Model did not pass the sanity check!")
+        raise RuntimeError("Model does not behave as expected!")
 
     return model
 
@@ -334,6 +334,7 @@ def predict(
     np.ndarray[int, np.dtype[np.float32]],
     np.ndarray[int, np.dtype[np.float32]],
     np.ndarray[int, np.dtype[np.float32]],
+    np.ndarray[int, np.dtype[np.float32]],
 ]:
     """
     Predicts the class of the given image.
@@ -343,7 +344,7 @@ def predict(
         image: Image to predict.
 
     Returns:
-        Tuple of (prediction, activation, activation pattern, original image).
+        Tuple of (prediction, confidence vector, activation, activation pattern, original image).
     """
     # Preprocess image
     img_size = model.img_size
@@ -354,12 +355,20 @@ def predict(
     logits, _, prototype_activations, prototype_activation_patterns = model(img_tensor)
 
     # Convert to numpy arrays
+    logits = logits.cpu().detach().numpy()
     prototype_activations = prototype_activations.cpu().detach().numpy()
     prototype_activation_patterns = prototype_activation_patterns.cpu().detach().numpy()
 
+    # Calculate confidence
+    e_x = np.exp(logits - np.max(logits))
+    confidence = e_x / e_x.sum()
+
     # Return outputs
     return (
-        torch.argmax(logits, dim=1)[0].item(),
+        # torch.argmax(logits, dim=1)[0].item(),
+        # torch.softmax(logits, dim=1)[0].cpu().detach().numpy(),
+        np.argmax(logits, axis=1)[0],
+        confidence[0],
         prototype_activations[0],
         prototype_activation_patterns[0],
         original_img,
@@ -488,6 +497,26 @@ def box_by_top_k_prototype(
     return images
 
 
+def get_confidence_map(confidence: np.ndarray[int, np.dtype[np.float32]], limit: int = 5) -> dict[str, float]:
+    """
+    Gets the confidence map of the given confidence vector.
+
+    Args:
+        confidence: Confidence vector.
+        limit: Limit the number of items in the confidence map.
+
+    Returns:
+        Confidence map.
+    """
+    # Create confidence map
+    confidence_map = {get_classification(i): confidence[i] for i in range(len(confidence))}
+
+    # Sort and limit confidence map
+    confidence_map = dict(sorted(confidence_map.items(), key=lambda item: item[1], reverse=True)[:limit])
+
+    return confidence_map
+
+
 def get_classification(idx: int) -> str:
     """
     Gets the classification of the given index.
@@ -526,9 +555,9 @@ if __name__ == "__main__":
 
     # Predict image
     start_t = time.time()
-    pred, act, pat, img = predict(ppnet, Image.open(img_path))
-    print(f"Time: {time.time() - start_t:.4f}s")
+    pred, con, act, pat, img = predict(ppnet, Image.open(img_path))
     print(f"Prediction: {get_classification(pred)} ({pred})")
+    print(f"Time: {time.time() - start_t:.4f}s")
 
     # Save heatmaps
     heatmaps_dir.mkdir(parents=True, exist_ok=True)
