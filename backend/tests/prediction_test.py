@@ -83,6 +83,7 @@ def test_only_heatmaps(mocker, image) -> None:
 
     json_response = response.json()
     assert json_response["prediction"] == "Pacific Loon"
+    assert len(json_response["confidence"]) == 5
     assert len(json_response["heatmap_urls"]) == 10
     assert json_response["box_urls"] is None
 
@@ -103,6 +104,7 @@ def test_only_boxes(mocker, image) -> None:
 
     json_response = response.json()
     assert json_response["prediction"] == "Pacific Loon"
+    assert len(json_response["confidence"]) == 5
     assert json_response["heatmap_urls"] is None
     assert len(json_response["box_urls"]) == 10
 
@@ -120,6 +122,7 @@ def test_predict(mocker, image) -> None:
 
     json_response = response.json()
     assert json_response["prediction"] == "Pacific Loon"
+    assert len(json_response["confidence"]) == 5
     assert len(json_response["heatmap_urls"]) == 10
     assert len(json_response["box_urls"]) == 10
 
@@ -136,5 +139,6 @@ def test_only_prediction(image) -> None:
 
     json_response = response.json()
     assert json_response["prediction"] == "Pacific Loon"
+    assert len(json_response["confidence"]) == 5
     assert json_response["heatmap_urls"] is None
     assert json_response["box_urls"] is None
