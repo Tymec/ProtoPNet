@@ -235,23 +235,38 @@ def load_model(model_path: Path) -> InferenceSession:
     return ort_session
 
 
-def load_image(image_path: Path, size: int) -> tuple[np.ndarray, np.ndarray]:
-    """Loads and preprocesses the image from the given path.
+def load_image(image_path: Path) -> Image.Image:
+    """Loads the image from the given path.
 
     Args:
         image_path: Path to the image file.
-        size: Network input size.
 
     Returns:
-        Tuple containing the preprocessed image and the original image.
+        The loaded image.
     """
     # Make sure image file exists
     if not image_path.exists():
         raise FileNotFoundError(f"Image {image_path!r} does not exist!")
 
-    # Load and resize image
+    # Load image
     img = Image.open(image_path)
-    img = np.array(img)
+
+    return img
+
+
+def preprocess_image(image_data: Image.Image, size: int) -> tuple[np.ndarray, np.ndarray]:
+    """Preprocesses the given image.
+
+    Args:
+        image_data: The image data.
+        size: Network input size.
+
+    Returns:
+        Tuple containing the preprocessed image and the original image.
+    """
+
+    # Load and resize image
+    img = np.array(image_data)
     res = np.array(Image.fromarray(img).resize((size, size), Image.BILINEAR))
     res = res.astype(np.float32) / 255.0
     orig = res.copy()
@@ -268,17 +283,21 @@ def load_image(image_path: Path, size: int) -> tuple[np.ndarray, np.ndarray]:
     return res, orig
 
 
-def predict(model: InferenceSession, image: np.ndarray) -> tuple[int, np.ndarray, np.ndarray]:
+def predict(model: InferenceSession, img_data: Image.Image) -> tuple[int, np.ndarray, np.ndarray, np.ndarray]:
     """Predicts the class of the given image.
 
     Args:
         model: The model to use for prediction.
-        image: The image to predict.
+        img_data: The image data.
 
     Returns:
-        Tuple containing the predicted class, the prototype activations and the prototype
-        activation patterns.
+        Tuple containing the predicted class, the prototype activations, the prototype
+        activation patterns and the original image.
     """
+    # Preprocess image
+    img_size = model.get_inputs()[0].shape[2]
+    image, original_image = preprocess_image(img_data, size=img_size)
+
     # Pass image through model
     ort_inputs = {model.get_inputs()[0].name: image}
     ort_outs = model.run(None, ort_inputs)
@@ -289,6 +308,7 @@ def predict(model: InferenceSession, image: np.ndarray) -> tuple[int, np.ndarray
         np.argmax(logits, axis=1)[0],
         prototype_activations[0],
         prototype_activation_patterns[0],
+        original_image,
     )
 
 
@@ -414,25 +434,31 @@ def box_by_top_k_prototype(
     return images
 
 
-if __name__ == "__main__":
-    # img_path = Path("static/001_Black_Footed_Albatross.jpg")
-    # img_path = Path("static/086_Pacific_Loon.jpg")
-    img_path = Path("static/007_Parakeet_Auklet.jpg")
+def get_classification(idx: int) -> str:
+    """Returns the classification for the given index.
 
+    Args:
+        idx: The index to get the classification for.
+
+    Returns:
+        The classification.
+    """
+    return CLASSIFICATIONS[idx]
+
+
+if __name__ == "__main__":
+    img_path = Path("static/Great_Crested_Flycatcher_0051_29530.jpg")
     model_path = Path("model/100push0.7413.onnx")
 
     model = load_model(model_path)
-    input_size = model.get_inputs()[0].shape  # batch, channels, height, width
-    image, original_image = load_image(img_path, input_size[2])
-    prediction, activation, activation_pattern = predict(model, image)
 
-    predicted_class = CLASSIFICATIONS[prediction]
-    print(f"Prediction: {predicted_class} ({prediction + 1})")
+    prediction, activation, activation_pattern, original_img = predict(model, load_image(img_path))
+    print(f"Prediction: {get_classification(prediction)} ({prediction + 1})")
 
-    heatmaps = heatmap_by_top_k_prototype(activation, activation_pattern, original_image)
+    heatmaps = heatmap_by_top_k_prototype(activation, activation_pattern, original_img, k=1)
     for i, heatmap in enumerate(heatmaps):
-        heatmap.save(f"static/onnx/heatmap_{i}.jpg")
+        heatmap.save(f"static/heatmaps/heatmap_{i}.jpg")
 
-    boxes = box_by_top_k_prototype(activation, activation_pattern, original_image)
+    boxes = box_by_top_k_prototype(activation, activation_pattern, original_img, k=1)
     for i, box in enumerate(boxes):
-        box.save(f"static/onnx/box_{i}.jpg")
+        box.save(f"static/boxes/box_{i}.jpg")

@@ -10,14 +10,55 @@ from torch.utils import benchmark
 from torch.utils.data import DataLoader
 from torchvision import transforms
 from torchvision.datasets import ImageFolder
+from vgg_features import VGG_features
 
 from model import PPNet
 
 DEVICE = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-# DEVICE = torch.device("cpu")
 BATCH_SIZE = 1
+USE_STATE_DICT = True
 MEAN = (0.485, 0.456, 0.406)
 STD = (0.229, 0.224, 0.225)
+
+
+def export_state_dict(model: PPNet, export_path: Path) -> None:
+    """Exports the state dict of the given model.
+
+    Args:
+        model: The model to export.
+        export_path: Where to save the exported state dict.
+    """
+    # Make sure export path exists
+    export_path.parent.mkdir(parents=True, exist_ok=True)
+
+    # Reverse engineer cfg for features
+    cfg = []
+    for layer in model.features.features:
+        if isinstance(layer, torch.nn.MaxPool2d):
+            cfg.append("M")
+        elif isinstance(layer, torch.nn.Conv2d):
+            cfg.append(layer.out_channels)
+
+    # Reverse engineer add on layers type for model
+    add_on_layers_type = "bottleneck"
+    if len(model.add_on_layers) == 4:
+        add_on_layers_type = "not_bottleneck"
+
+    # Export state dict
+    torch.save(
+        {
+            "model": model.state_dict(),
+            "features": model.features.state_dict(),
+            "features_cfg": cfg,
+            "img_size": model.img_size,
+            "prototype_shape": model.prototype_shape,
+            "proto_layer_rf_info": model.proto_layer_rf_info,
+            "num_classes": model.num_classes,
+            "prototype_activation_function": model.prototype_activation_function,
+            "add_on_layers_type": add_on_layers_type,
+        },
+        export_path,
+    )
 
 
 def load_torch_model(model_path: Path) -> PPNet:
@@ -35,6 +76,42 @@ def load_torch_model(model_path: Path) -> PPNet:
 
     # Load model
     model: PPNet = torch.load(model_path, map_location=DEVICE)
+    model.eval()
+
+    return model
+
+
+def load_torch_state_dict(state_dict_path: Path) -> PPNet:
+    """Loads the model from the given path.
+
+    Args:
+        state_path: Path to the state dict file.
+
+    Returns:
+        The loaded model.
+    """
+    # Make sure model file exists
+    if not state_dict_path.exists():
+        raise FileNotFoundError(f"State dict {state_dict_path!r} does not exist!")
+
+    # Load state dict
+    state_dict = torch.load(state_dict_path, map_location=DEVICE)
+
+    # Create features
+    features = VGG_features(state_dict["features_cfg"]).to(DEVICE)
+    features.load_state_dict(state_dict["features"])
+
+    # Create model
+    model = PPNet(
+        features,
+        state_dict["img_size"],
+        state_dict["prototype_shape"],
+        state_dict["proto_layer_rf_info"],
+        state_dict["num_classes"],
+        prototype_activation_function=state_dict["prototype_activation_function"],
+        add_on_layers_type=state_dict["add_on_layers_type"],
+    ).to(DEVICE)
+    model.load_state_dict(state_dict["model"])
     model.eval()
 
     return model
@@ -443,13 +520,23 @@ def test_side_by_side(
 if __name__ == "__main__":
     model_path = Path("model/100push0.7413.pth")
     model_info_path = Path("model/bb100.npy")
+    state_dict_path = Path("model/state_dict.pth")
     onnx_path = Path("model/exported.onnx")
     torchscript_path = Path("model/exported.pt")
     dataset_path = Path("dataset")
 
     torch.manual_seed(0)
 
-    torch_model = load_torch_model(model_path)
+    # Export state dict
+    # torch_model = load_torch_model(model_path)
+    # export_state_dict(torch_model, state_dict_path)
+    # exit(0)
+
+    # Load model
+    if USE_STATE_DICT:
+        torch_model = load_torch_state_dict(state_dict_path)
+    else:
+        torch_model = load_torch_model(model_path)
     print(torch_model)
 
     is_sane = sanity_check(torch_model, model_info_path)
@@ -482,9 +569,9 @@ if __name__ == "__main__":
     ts_mean, ts_median = benchmark_model(torchscript_model, img_size)
 
     # Test models
-    same, tot = test_side_by_side(torch_model, onnx_model, torchscript_model, dataset_path, img_size, strict=False)
-    print(f"Same (%): {same / tot * 100:.4f}%")
-    print(f"Same (n): {same} / {tot}")
+    # same, tot = test_side_by_side(torch_model, onnx_model, torchscript_model, dataset_path, img_size, strict=False)
+    # print(f"Same (%): {same / tot * 100:.4f}%")
+    # print(f"Same (n): {same} / {tot}")
     # torch_t, torch_correct, torch_total = test(torch_model, dataset_path, img_size)
     # onnx_t, onnx_correct, onnx_total = test(onnx_wrapper, dataset_path, img_size)
     # ts_t, ts_correct, ts_total = test(torchscript_model, dataset_path, img_size)
