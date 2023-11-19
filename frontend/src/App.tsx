@@ -116,6 +116,14 @@ export default function App() {
           />
         ))}
       </div>
+      {Object.keys(confidenceData).length > 0 && (
+        <div className="mt-4">
+          <h2 className="text-2xl font-semibold text-gray-300">Alternative Predictions:</h2>
+          {Object.entries(confidenceData).map(([label, confidence]) => (
+            <p key={label} className="text-gray-400">{`${label}: ${confidence < 0.0001 ? '<0.01' : (confidence * 100).toFixed(2)}%`}</p>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
