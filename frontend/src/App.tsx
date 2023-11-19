@@ -55,7 +55,7 @@ export default function App() {
   }
  
   return (
-    <div className="bg-gray-700 min-h-screen m-0 p-0">
+    <div className="bg-gray-700 min-h-screen m-0 p-4">
       <div>
         <label htmlFor="k" className="text-gray-100">
           K:
