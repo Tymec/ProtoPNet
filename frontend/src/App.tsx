@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import './App.css';
 import ImageDropzone from './components/ImageDropzone';
+import UploadButton from './components/UploadButton';
 
 enum ReturnType {
   BOTH = 'both',
@@ -84,6 +85,7 @@ export default function App() {
             <option value={ReturnType.BOXES}>Boxes</option>
           </select>
         </label>
+        <UploadButton onClick={() => selectedFile && predict(selectedFile)} isFileSelected={!!selectedFile} />
       </div>
       <ImageDropzone onUpload={(file) => file && setSelectedFile(file)} /> 
       {prediction && (
