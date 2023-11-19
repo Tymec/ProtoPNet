@@ -17,6 +17,16 @@ export default function App() {
   const [heatmapImages, setHeatmapImages] = useState<string[]>([]);
   const [boxImages, setBoxImages] = useState<string[]>([]);
 
+  function getCoinfidanceColor(confidence: number): string {
+    if (confidence > 0.8) {
+      return 'text-green-500'; 
+    } else if (confidence >= 0.2) {
+      return 'text-yellow-500'; 
+    } else {
+      return 'text-red-500'; 
+    }
+  }
+
   function predict(file: File) {
     const url = `${import.meta.env.VITE_API_URL}/predict?`;
     const formData = new FormData();
@@ -79,6 +89,11 @@ export default function App() {
         <div className="flex flex-col items-center justify-center">
           <h2 className="text-2xl font-semibold text-gray-100">Prediction</h2>
           <p className="text-gray-400">{prediction}</p>
+          {confidenceData[prediction] && (
+            <p className={`${getCoinfidanceColor(confidenceData[prediction])} text-xl mt-2`}>
+              Confidence: {Math.round(confidenceData[prediction] * 100)}%
+            </p>
+          )}
         </div>
       )}
       <div className="flex flex-row items-center justify-center flex-wrap gap-4 mb-4">
