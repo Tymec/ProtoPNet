@@ -13,6 +13,7 @@ export default function App() {
   const [optionReturnType, setOptionReturnType] = useState<ReturnType>(ReturnType.BOTH);
 
   const [prediction, setPrediction] = useState<string | undefined>(undefined);
+  const [confidenceData, setConfidenceData] = useState<{ [key: string]: number }>({});
   const [heatmapImages, setHeatmapImages] = useState<string[]>([]);
   const [boxImages, setBoxImages] = useState<string[]>([]);
 
@@ -36,6 +37,7 @@ export default function App() {
         setPrediction(data.prediction);
         setHeatmapImages(data.heatmap_urls);
         setBoxImages(data.box_urls);
+        setConfidenceData(data.confidence)
       })
       .catch((err) => {
         console.error(err);
@@ -52,6 +54,7 @@ export default function App() {
             type="number"
             min="1"
             max="100"
+            placeholder='1 to 100'
             value={optionK}
             onChange={(e) => setOptionK(parseInt(e.target.value))}
             className="ml-2 bg-gray-800 text-gray-100 rounded-lg p-2"
