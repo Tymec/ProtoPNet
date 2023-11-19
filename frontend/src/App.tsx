@@ -35,6 +35,7 @@ export default function App() {
     if (isNaN(optionK) || optionK > 100) {
       setOptionK(10);
       k = 10
+      alert("K set to default: 10")
     }
 
     const url = `${import.meta.env.VITE_API_URL}/predict?`;
@@ -66,6 +67,7 @@ export default function App() {
  
   return (
     <div className="bg-gray-700 min-h-screen m-0 p-4">
+      <ImageDropzone onUpload={(file) => file && setSelectedFile(file)} /> 
       <div>
         <label htmlFor="k" className="text-gray-100">
           K:
@@ -74,7 +76,7 @@ export default function App() {
             type="number"
             min="1"
             max="100"
-            placeholder='1 to 100'
+            placeholder='1-100'
             value={optionK}
             onChange={(e) => setOptionK(parseInt(e.target.value))}
             className="ml-2 bg-gray-800 text-gray-100 rounded-lg p-2"
@@ -95,7 +97,6 @@ export default function App() {
         </label>
         <UploadButton onClick={() => selectedFile && predict(selectedFile)} isFileSelected={!!selectedFile} />
       </div>
-      <ImageDropzone onUpload={(file) => file && setSelectedFile(file)} /> 
       {prediction && (
         <div className="flex flex-col items-center justify-center">
           <h2 className="text-2xl font-semibold text-gray-100">Prediction</h2>
