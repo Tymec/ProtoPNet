@@ -11,6 +11,12 @@ export default function ImageDropzone({ onUpload }: ImageDropzoneProps) {
     setPreview(URL.createObjectURL(file));
   };
 
+  const isImageFile = (file: File): boolean => {
+    const allowedExtensions = ['png', 'jpg', 'jpeg'];
+    const extension = file.name.split('.').pop()?.toLowerCase();
+    return extension ? allowedExtensions.includes(extension) : false;
+  };
+
   return (
     <div className="flex items-center justify-center ">
       <label
@@ -55,8 +61,14 @@ export default function ImageDropzone({ onUpload }: ImageDropzoneProps) {
               onChange={(e) => {
                 if (e.target.files && e.target.files.length > 0) {
                   const file = e.target.files[0];
+
+                  if (isImageFile(file)) {
                   onUpload(file);
                   previewImage(file);
+                  }
+                  else {
+                    alert('Please select a valid image file (PNG, JPG, JPEG).');
+                  }
                 }
               }}
             />
