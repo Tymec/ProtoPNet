@@ -1,4 +1,5 @@
-import React from 'react';
+// UploadButton.tsx
+import React, { useState } from 'react';
 
 interface UploadButtonProps {
   onClick: () => void;
@@ -6,11 +7,14 @@ interface UploadButtonProps {
 }
 
 const UploadButton: React.FC<UploadButtonProps> = ({ onClick, isFileSelected }) => {
+  const [isClickedOnce, setIsClickedOnce] = useState(false);
+
   const handleClick = () => {
-    if (isFileSelected) {
+    if (isFileSelected || isClickedOnce) {
       onClick();
     } else {
       alert('Please select a file before uploading.');
+      setIsClickedOnce(true);
     }
   };
 
@@ -18,7 +22,7 @@ const UploadButton: React.FC<UploadButtonProps> = ({ onClick, isFileSelected }) 
     <button
       className={`ml-2 bg-blue-500 text-white rounded-lg p-2 ${isFileSelected ? '' : 'cursor-not-allowed'}`}
       onClick={handleClick}
-      disabled={!isFileSelected}
+      disabled={!isFileSelected && isClickedOnce}
     >
       Upload
     </button>
