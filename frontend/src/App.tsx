@@ -11,6 +11,7 @@ enum ReturnType {
 export default function App() {
   const [optionK, setOptionK] = useState<number>(10);
   const [optionReturnType, setOptionReturnType] = useState<ReturnType>(ReturnType.BOTH);
+  const [selectedFile, setSelectedFile] = useState<File | undefined>(undefined);
 
   const [prediction, setPrediction] = useState<string | undefined>(undefined);
   const [confidenceData, setConfidenceData] = useState<{ [key: string]: number }>({});
@@ -84,7 +85,7 @@ export default function App() {
           </select>
         </label>
       </div>
-      <ImageDropzone onUpload={predict} />
+      <ImageDropzone onUpload={(file) => file && setSelectedFile(file)} /> 
       {prediction && (
         <div className="flex flex-col items-center justify-center">
           <h2 className="text-2xl font-semibold text-gray-100">Prediction</h2>

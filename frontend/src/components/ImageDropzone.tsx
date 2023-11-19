@@ -1,7 +1,7 @@
 import { useState } from 'react';
 
 interface ImageDropzoneProps {
-  onUpload: (file: File) => void;
+  onUpload: (file: File | undefined) => void;
 }
 
 export default function ImageDropzone({ onUpload }: ImageDropzoneProps) {
@@ -64,8 +64,8 @@ export default function ImageDropzone({ onUpload }: ImageDropzoneProps) {
                   const file = e.target.files[0];
 
                   if (isImageFile(file)) {
-                  onUpload(file);
-                  previewImage(file);
+                    previewImage(file);
+                    onUpload(file);
                   }
                   else {
                     alert('Please select a valid image file (PNG, JPG, JPEG).');
