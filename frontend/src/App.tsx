@@ -30,12 +30,20 @@ export default function App() {
   }
 
   function predict(file: File) {
+    let k = optionK;
+  
+    if (isNaN(optionK) || optionK > 100) {
+      setOptionK(10);
+      k = 10
+    }
+
     const url = `${import.meta.env.VITE_API_URL}/predict?`;
     const formData = new FormData();
-    
+
     formData.append('image', file);
     formData.append('return_type', optionReturnType);
-    formData.append('k', optionK.toString());
+    formData.append('k', k.toString());
+
 
     fetch(url, {
       method: 'POST',
