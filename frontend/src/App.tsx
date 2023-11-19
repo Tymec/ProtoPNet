@@ -91,7 +91,7 @@ export default function App() {
           <p className="text-gray-400">{prediction}</p>
           {confidenceData[prediction] && (
             <p className={`${getCoinfidanceColor(confidenceData[prediction])} text-xl mt-2`}>
-              Confidence: {Math.round(confidenceData[prediction] * 100)}%
+              Confidence: {(confidenceData[prediction] * 100).toFixed(2)}%
             </p>
           )}
         </div>
@@ -119,7 +119,7 @@ export default function App() {
       {Object.keys(confidenceData).length > 0 && (
         <div className="mt-4">
           <h2 className="text-2xl font-semibold text-gray-300">Alternative Predictions:</h2>
-          {Object.entries(confidenceData).map(([label, confidence]) => (
+          {Object.entries(confidenceData).slice(1).map(([label, confidence]) => (
             <p key={label} className="text-gray-400">{`${label}: ${confidence < 0.0001 ? '<0.01' : (confidence * 100).toFixed(2)}%`}</p>
           ))}
         </div>
