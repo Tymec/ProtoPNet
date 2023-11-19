@@ -17,19 +17,19 @@ export default function App() {
   const [boxImages, setBoxImages] = useState<string[]>([]);
 
   function predict(file: File) {
-    const url =
-      `${import.meta.env.VITE_API_URL}/predict?` +
-      new URLSearchParams({
-        k: optionK.toString(),
-        return_type: optionReturnType,
-      });
-  
+    const url = `${import.meta.env.VITE_API_URL}/predict?`;
     const formData = new FormData();
+    
     formData.append('image', file);
-  
+    formData.append('return_type', optionReturnType);
+    formData.append('k', optionK.toString());
+
     fetch(url, {
       method: 'POST',
       body: formData,
+      headers: {
+        'accept': 'application/json'
+      }
     })
       .then((res) => res.json())
       .then((data) => {
@@ -79,7 +79,7 @@ export default function App() {
         </div>
       )}
       <div className="flex flex-row items-center justify-center flex-wrap gap-4 mb-4">
-        {heatmapImages.length > 0 && heatmapImages.map((image, index) => (
+        {heatmapImages != null && heatmapImages.length > 0 && heatmapImages.map((image, index) => (
           <img
             key={index}
             className="rounded-lg"
@@ -89,7 +89,7 @@ export default function App() {
         ))}
       </div>
       <div className="flex flex-row items-center justify-center flex-wrap gap-4">
-        {boxImages.length > 0 && boxImages.map((image, index) => (
+        {boxImages != null && boxImages.length > 0 && boxImages.map((image, index) => (
           <img
             key={index}
             className="rounded-lg"
