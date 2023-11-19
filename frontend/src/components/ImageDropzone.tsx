@@ -58,6 +58,7 @@ export default function ImageDropzone({ onUpload }: ImageDropzoneProps) {
               id="dropzone-file"
               type="file"
               className="hidden"
+              accept=".png, .jpg, .jpeg"
               onChange={(e) => {
                 if (e.target.files && e.target.files.length > 0) {
                   const file = e.target.files[0];
