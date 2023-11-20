@@ -3,6 +3,7 @@ import { useState } from 'react';
 import ColorSchemeToggle from './components/ColorSchemeToggle';
 import ImageDropzone from './components/ImageDropzone';
 import LoadingWheel from './components/LoadingWheel';
+import UploadImages from './components/UploadImages';
 
 enum ReturnType {
   NONE = 'none',
@@ -138,35 +139,13 @@ export default function App() {
         </div>
       </div>
 
-      {heatmapImages && heatmapImages.length > 0 && (
-        <div className="bg-gray-200 dark:bg-gray-700 p-4 rounded-lg">
-          <div className="flex flex-row items-center justify-start flex-wrap gap-4 mb-4">
-            {heatmapImages.map((image, index) => (
-              <img
-                key={index}
-                className="rounded-lg"
-                src={`${import.meta.env.VITE_API_URL}/${image}`}
-                alt="Heatmap"
-              />
-            ))}
-          </div>
-        </div>
-      )}
 
+      {heatmapImages && heatmapImages.length > 0 && (
+        <UploadImages heatmapImages={heatmapImages} />)}
+  
       {boxImages && boxImages.length > 0 && (
-        <div className="bg-gray-200 dark:bg-gray-700 p-4 rounded-lg">
-          <div className="flex flex-row items-center justify-start flex-wrap gap-4">
-            {boxImages.map((image, index) => (
-              <img
-                key={index}
-                className="rounded-lg"
-                src={`${import.meta.env.VITE_API_URL}/${image}`}
-                alt="Box"
-              />
-            ))}
-          </div>
-        </div>
-      )}
+        <UploadImages heatmapImages={boxImages}/>)}
+
     </div>
   );
 }
