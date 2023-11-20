@@ -41,9 +41,9 @@ export default function App() {
     let k = optionK;
     setLoading(true)
 
-    if (isNaN(optionK) || optionK > 100) {
-      setOptionK(10);
-      k = 10;
+    if (isNaN(optionK) || optionK < 100) {
+      setOptionK(1000);
+      k = 1000;
       alert('K set to default: 10');
     }
 
@@ -78,9 +78,10 @@ export default function App() {
   return (
     <div className="bg-white dark:bg-slate-800 min-h-screen p-8 flex flex-col gap-4">
       <div className="flex flex-row flex-wrap gap-4">
-        <div className="flex-auto">
-          <ImageDropzone onUpload={(file) => file && setSelectedFile(file)} />
-        </div>
+      <div className={`flex-auto relative ${loading ? 'opacity-50' : ''}`}>
+        <ImageDropzone onUpload={(file) => file && setSelectedFile(file)} />
+          {loading && <LoadingWheel className="absolute inset-0 m-auto" />}
+      </div>
         <div className={`flex-shrink-0 flex-grow-[8] flex flex-col p-4 rounded-lg bg-gray-200 dark:bg-gray-700 relative ${loading ? 'opacity-50' : ''}`}>
             {loading && <LoadingWheel className="absolute inset-0 m-auto" />}
             <h2 className="text-2xl font-semibold text-gray-800 dark:text-gray-100">Prediction</h2>
@@ -141,10 +142,10 @@ export default function App() {
 
 
       {heatmapImages && heatmapImages.length > 0 && (
-        <UploadImages heatmapImages={heatmapImages} />)}
+        <UploadImages images={heatmapImages} />)}
   
       {boxImages && boxImages.length > 0 && (
-        <UploadImages heatmapImages={boxImages}/>)}
+        <UploadImages images={boxImages}/>)}
 
     </div>
   );
