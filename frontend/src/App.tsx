@@ -69,7 +69,7 @@ export default function App() {
     <div className="bg-white min-h-screen m-0 p-4">
       <div className="bg-gray-700 p-4 rounded-lg mb-4">
       <ImageDropzone onUpload={(file) => file && setSelectedFile(file)} />
-        <div>
+        <div className="mt-4 mb-4">
           <label htmlFor="k" className="text-gray-100">
             K:
             <input
@@ -80,7 +80,7 @@ export default function App() {
               placeholder='1-100'
               value={optionK}
               onChange={(e) => setOptionK(parseInt(e.target.value))}
-              className="ml-2 bg-gray-800 text-gray-100 rounded-lg p-2"
+              className="ml-2 bg-gray-800 text-gray-100 rounded-lg p-2 w-13"
             />
           </label>
           <label htmlFor="return_type" className="text-gray-100 ml-4">
@@ -114,7 +114,6 @@ export default function App() {
   
       {heatmapImages && heatmapImages.length > 0 && (
         <div className="bg-gray-700 p-4 rounded-lg mb-4">
-          {/* Wyświetlanie heatmap */}
           <div className="flex flex-row items-center justify-center flex-wrap gap-4 mb-4">
             {heatmapImages.map((image, index) => (
               <img
@@ -130,7 +129,6 @@ export default function App() {
   
       {boxImages && boxImages.length > 0 && (
         <div className="bg-gray-700 p-4 rounded-lg mb-4">
-          {/* Wyświetlanie boxmap */}
           <div className="flex flex-row items-center justify-center flex-wrap gap-4">
             {boxImages.map((image, index) => (
               <img
