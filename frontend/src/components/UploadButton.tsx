@@ -1,4 +1,3 @@
-// UploadButton.tsx
 import React, { useState } from 'react';
 
 interface UploadButtonProps {
@@ -20,7 +19,9 @@ const UploadButton: React.FC<UploadButtonProps> = ({ onClick, isFileSelected }) 
 
   return (
     <button
-      className={`ml-2 bg-blue-500 w-30 text-white rounded-lg p-2 ${isFileSelected ? '' : 'cursor-not-allowed'}`}
+      className={`ml-2 bg-blue-500 w-30 text-white rounded-lg p-2 ${
+        isFileSelected ? '' : 'cursor-not-allowed'
+      }`}
       onClick={handleClick}
       disabled={!isFileSelected && isClickedOnce}
     >
@@ -42,7 +43,6 @@ const UploadButton: React.FC<UploadButtonProps> = ({ onClick, isFileSelected }) 
       </svg>
     </button>
   );
-  
-}
+};
 
 export default UploadButton;

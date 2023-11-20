@@ -1,9 +1,10 @@
+import UploadButton from '@/components/UploadButton';
 import { useState } from 'react';
-import './App.css';
+import ColorSchemeToggle from './components/ColorSchemeToggle';
 import ImageDropzone from './components/ImageDropzone';
-import UploadButton from './components/UploadButton';
 
 enum ReturnType {
+  NONE = 'none',
   BOTH = 'both',
   HEATMAPS = 'heatmaps',
   BOXES = 'boxes',
@@ -19,102 +20,121 @@ export default function App() {
   const [heatmapImages, setHeatmapImages] = useState<string[]>([]);
   const [boxImages, setBoxImages] = useState<string[]>([]);
 
-  function getCoinfidanceColor(confidence: number): string {
+  const getCoinfidanceColor = (confidence: number) => {
     if (confidence > 0.8) {
-      return 'text-green-500'; 
+      return 'text-green-500';
     } else if (confidence >= 0.2) {
-      return 'text-yellow-500'; 
+      return 'text-yellow-500';
     } else {
-      return 'text-red-500'; 
+      return 'text-red-500';
     }
-  }
+  };
 
-  function predict(file: File) {
+  const confidenceToPercentage = (confidence: number) => {
+    return `${confidence < 0.0001 ? '<0.01' : (confidence * 100).toFixed(2)}%`;
+  };
+
+  const predict = (file: File) => {
     let k = optionK;
-  
+
     if (isNaN(optionK) || optionK > 100) {
       setOptionK(10);
-      k = 10
-      alert("K set to default: 10")
+      k = 10;
+      alert('K set to default: 10');
     }
 
-    const url = `${import.meta.env.VITE_API_URL}/predict?`;
+    const url = `${import.meta.env.VITE_API_URL}/predict`;
     const formData = new FormData();
 
     formData.append('image', file);
     formData.append('return_type', optionReturnType);
     formData.append('k', k.toString());
 
-
     fetch(url, {
       method: 'POST',
       body: formData,
       headers: {
-        'accept': 'application/json'
-      }
+        accept: 'application/json',
+      },
     })
       .then((res) => res.json())
       .then((data) => {
         setPrediction(data.prediction);
         setHeatmapImages(data.heatmap_urls);
         setBoxImages(data.box_urls);
-        setConfidenceData(data.confidence)
+        setConfidenceData(data.confidence);
       })
       .catch((err) => {
         console.error(err);
       });
-  }
-  
+  };
+
   return (
-    <div className="bg-white min-h-screen m-0 p-4">
-      <div className="bg-gray-700 p-4 rounded-lg mb-4">
-      <ImageDropzone onUpload={(file) => file && setSelectedFile(file)} />
-        <div className="mt-4 mb-4">
-          <label htmlFor="k" className="text-gray-100">
-            K:
-            <input
-              id="k"
-              type="number"
-              min="1"
-              max="100"
-              placeholder='1-100'
-              value={optionK}
-              onChange={(e) => setOptionK(parseInt(e.target.value))}
-              className="ml-2 bg-gray-800 text-gray-100 rounded-lg p-2 w-13"
-            />
-          </label>
-          <label htmlFor="return_type" className="text-gray-100 ml-4">
-            Return type:
-            <select
-              id="return_type"
-              value={optionReturnType}
-              onChange={(e) => setOptionReturnType(e.target.value as ReturnType)}
-              className="ml-2 bg-gray-800 text-gray-100 rounded-lg p-2"
-            >
-              <option value={ReturnType.BOTH}>Both</option>
-              <option value={ReturnType.HEATMAPS}>Heatmaps</option>
-              <option value={ReturnType.BOXES}>Boxes</option>
-            </select>
-          </label>
-          <UploadButton onClick={() => selectedFile && predict(selectedFile)} isFileSelected={!!selectedFile} />
+    <div className="bg-white dark:bg-slate-800 min-h-screen p-8 flex flex-col gap-4">
+      <div className="flex flex-row flex-wrap gap-4">
+        <div className="flex-auto">
+          <ImageDropzone onUpload={(file) => file && setSelectedFile(file)} />
         </div>
-  
-        {prediction && (
-          <div className="flex flex-col items-center justify-center">
-            <h2 className="text-2xl font-semibold text-gray-100">Prediction</h2>
-            <p className="text-gray-400">{prediction}</p>
-            {confidenceData[prediction] && (
-              <p className={`${getCoinfidanceColor(confidenceData[prediction])} text-xl mt-2`}>
-                Confidence: {(confidenceData[prediction] * 100).toFixed(2)}%
-              </p>
+        <div className="flex-shrink-0 flex-grow-[8] flex flex-col p-4 rounded-lg bg-gray-200 dark:bg-gray-700">
+          <h2 className="text-2xl font-semibold text-gray-800 dark:text-gray-100">Prediction</h2>
+          <ul className="list-disc list-inside">
+            {prediction && (
+              <li className={`text-lg ${getCoinfidanceColor(confidenceData[prediction])}`}>
+                {prediction}: ({confidenceToPercentage(confidenceData[prediction])})
+              </li>
             )}
-          </div>
-        )}
+            {Object.entries(confidenceData)
+              .slice(1)
+              .map(([label, confidence]) => (
+                <li key={label} className="text-md text-gray-800 dark:text-gray-100">
+                  {`${label}: ${confidenceToPercentage(confidence)}`}
+                </li>
+              ))}
+          </ul>
+        </div>
       </div>
-  
+      <div className="bg-gray-200 dark:bg-gray-700 p-4 rounded-lg flex flex-row flex-wrap items-center justify-around gap-4">
+        <label htmlFor="k-option" className="text-gray-800 dark:text-gray-100">
+          K:
+          <input
+            id="k-option"
+            type="number"
+            min="1"
+            max="100"
+            placeholder="1-100"
+            value={optionK}
+            onChange={(e) => setOptionK(parseInt(e.target.value))}
+            className="ml-2 bg-gray-500 dark:bg-gray-800 text-gray-200 dark:text-gray-100 rounded-lg p-2"
+          />
+        </label>
+        <label htmlFor="return-type" className="text-gray-800 dark:text-gray-100">
+          Return:
+          <select
+            id="return-type"
+            value={optionReturnType}
+            onChange={(e) => setOptionReturnType(e.target.value as ReturnType)}
+            className="ml-2 bg-gray-500 dark:bg-gray-800 text-gray-200 dark:text-gray-100 rounded-lg p-2"
+          >
+            <option value={ReturnType.BOTH}>Both</option>
+            <option value={ReturnType.HEATMAPS}>Heatmaps</option>
+            <option value={ReturnType.BOXES}>Boxes</option>
+            <option value={ReturnType.NONE}>None</option>
+          </select>
+        </label>
+        <div className="">
+          <ColorSchemeToggle />
+        </div>
+        <div className="">
+          <UploadButton
+            onClick={() => selectedFile && predict(selectedFile)}
+            isFileSelected={!!selectedFile}
+          />
+        </div>
+      </div>
+
       {heatmapImages && heatmapImages.length > 0 && (
-        <div className="bg-gray-700 p-4 rounded-lg mb-4">
-          <div className="flex flex-row items-center justify-center flex-wrap gap-4 mb-4">
+        <div className="bg-gray-200 dark:bg-gray-700 p-4 rounded-lg">
+          <div className="flex flex-row items-center justify-start flex-wrap gap-4 mb-4">
             {heatmapImages.map((image, index) => (
               <img
                 key={index}
@@ -126,10 +146,10 @@ export default function App() {
           </div>
         </div>
       )}
-  
+
       {boxImages && boxImages.length > 0 && (
-        <div className="bg-gray-700 p-4 rounded-lg mb-4">
-          <div className="flex flex-row items-center justify-center flex-wrap gap-4">
+        <div className="bg-gray-200 dark:bg-gray-700 p-4 rounded-lg">
+          <div className="flex flex-row items-center justify-start flex-wrap gap-4">
             {boxImages.map((image, index) => (
               <img
                 key={index}
@@ -141,19 +161,6 @@ export default function App() {
           </div>
         </div>
       )}
-  
-      {Object.keys(confidenceData).length > 0 && (
-        <div className="bg-gray-700 p-4 rounded-lg mb-4">
-          <h2 className="text-2xl font-semibold text-gray-300">Alternative Predictions:</h2>
-          {Object.entries(confidenceData).slice(1).map(([label, confidence]) => (
-            <p key={label} className="text-gray-400">{`${label}: ${confidence < 0.0001 ? '<0.01' : (confidence * 100).toFixed(2)}%`}</p>
-          ))}
-        </div>
-      )}
     </div>
   );
-  
-  
-  
-  
 }
