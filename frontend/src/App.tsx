@@ -41,9 +41,9 @@ export default function App() {
     let k = optionK;
     setLoading(true)
 
-    if (isNaN(optionK) || optionK < 100) {
-      setOptionK(1000);
-      k = 1000;
+    if (isNaN(optionK) || optionK > 100) {
+      setOptionK(10);
+      k = 10;
       alert('K set to default: 10');
     }
 
