@@ -18,14 +18,15 @@ export default function ImageDropzone({ onUpload }: ImageDropzoneProps) {
   };
 
   return (
-    <div className="flex items-center justify-center ">
+    <div className="flex items-center justify-center">
       <label
         htmlFor="dropzone-file"
-        className="flex flex-col items-center justify-center border-2 h-96 w-3/4 border-gray-300 border-dashed rounded-lg cursor-pointer bg-gray-50 dark:hover:bg-bray-800 dark:bg-gray-700 hover:bg-gray-100 dark:border-gray-600 dark:hover:border-gray-500 dark:hover:bg-gray-600"
+        className="flex flex-col items-center justify-center border-2 h-full w-full border-gray-300 border-dashed rounded-lg cursor-pointer bg-gray-50 dark:hover:bg-bray-800 dark:bg-gray-700 hover:bg-gray-100 dark:border-gray-600 dark:hover:border-gray-500 dark:hover:bg-gray-600"
       >
         {preview ? (
           <img
-            className="rounded-lg w-full h-full object-cover"
+          
+            className="rounded-lg"
             src={preview}
             alt="Preview"
           />
