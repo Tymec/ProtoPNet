@@ -2,6 +2,7 @@ import UploadButton from '@/components/UploadButton';
 import { useState } from 'react';
 import ColorSchemeToggle from './components/ColorSchemeToggle';
 import ImageDropzone from './components/ImageDropzone';
+import LoadingWheel from './components/LoadingWheel';
 
 enum ReturnType {
   NONE = 'none',
@@ -14,6 +15,7 @@ export default function App() {
   const [optionK, setOptionK] = useState<number>(10);
   const [optionReturnType, setOptionReturnType] = useState<ReturnType>(ReturnType.BOTH);
   const [selectedFile, setSelectedFile] = useState<File | undefined>(undefined);
+  const [loading, setLoading] = useState(false);
 
   const [prediction, setPrediction] = useState<string | undefined>(undefined);
   const [confidenceData, setConfidenceData] = useState<{ [key: string]: number }>({});
@@ -36,6 +38,7 @@ export default function App() {
 
   const predict = (file: File) => {
     let k = optionK;
+    setLoading(true)
 
     if (isNaN(optionK) || optionK > 100) {
       setOptionK(10);
@@ -66,7 +69,9 @@ export default function App() {
       })
       .catch((err) => {
         console.error(err);
-      });
+      }).finally(() =>
+        setLoading(false)
+      );
   };
 
   return (
@@ -75,22 +80,23 @@ export default function App() {
         <div className="flex-auto">
           <ImageDropzone onUpload={(file) => file && setSelectedFile(file)} />
         </div>
-        <div className="flex-shrink-0 flex-grow-[8] flex flex-col p-4 rounded-lg bg-gray-200 dark:bg-gray-700">
-          <h2 className="text-2xl font-semibold text-gray-800 dark:text-gray-100">Prediction</h2>
-          <ul className="list-disc list-inside">
-            {prediction && (
-              <li className={`text-lg ${getCoinfidanceColor(confidenceData[prediction])}`}>
-                {prediction}: ({confidenceToPercentage(confidenceData[prediction])})
-              </li>
-            )}
-            {Object.entries(confidenceData)
-              .slice(1)
-              .map(([label, confidence]) => (
-                <li key={label} className="text-md text-gray-800 dark:text-gray-100">
-                  {`${label}: ${confidenceToPercentage(confidence)}`}
-                </li>
-              ))}
-          </ul>
+        <div className={`flex-shrink-0 flex-grow-[8] flex flex-col p-4 rounded-lg bg-gray-200 dark:bg-gray-700 relative ${loading ? 'opacity-50' : ''}`}>
+            {loading && <LoadingWheel className="absolute inset-0 m-auto" />}
+            <h2 className="text-2xl font-semibold text-gray-800 dark:text-gray-100">Prediction</h2>
+            <ul className="list-disc list-inside">
+                {prediction && (
+                    <li className={`text-lg ${getCoinfidanceColor(confidenceData[prediction])}`}>
+                        {prediction}: ({confidenceToPercentage(confidenceData[prediction])})
+                    </li>
+                )}
+                {Object.entries(confidenceData)
+                    .slice(1)
+                    .map(([label, confidence]) => (
+                        <li key={label} className="text-md text-gray-800 dark:text-gray-100">
+                            {`${label}: ${confidenceToPercentage(confidence)}`}
+                        </li>
+                    ))}
+            </ul>
         </div>
       </div>
       <div className="bg-gray-200 dark:bg-gray-700 p-4 rounded-lg flex flex-row flex-wrap items-center justify-around gap-4">
