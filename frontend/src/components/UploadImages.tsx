@@ -40,7 +40,7 @@ const UploadImages: React.FC<HeatmapProps> = ({ images }) => {
       {!imagesLoaded && <LoadingWheel />}
 
       {imagesLoaded && (
-        <div className="flex flex-row items-center justify-start flex-wrap gap-4">
+        <div className="flex flex-row items-center justify-center flex-wrap gap-4">
           {images.map((image, index) => (
             <img
               key={index}
