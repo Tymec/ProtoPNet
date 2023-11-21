@@ -27,7 +27,7 @@ const UploadImages: React.FC<HeatmapProps> = ({ images}) => {
   }, [images]);
 
   return (
-    <div className={`g-gray-200 dark:bg-gray-700 p-4 rounded-lg relative ${imagesLoaded ? '' : 'opacity-50'}`}>
+    <div className={`bg-gray-200 g-gray-200 dark:bg-gray-700 p-4 rounded-lg relative ${imagesLoaded ? '' : 'opacity-50'}`}>
       {!imagesLoaded && <LoadingWheel/>}
 
       {imagesLoaded && (
