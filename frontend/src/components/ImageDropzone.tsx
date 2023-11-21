@@ -13,8 +13,25 @@ export default function ImageDropzone({ onUpload }: ImageDropzoneProps) {
     return extension ? allowedExtensions.includes(extension) : false;
   };
 
+  const handleFileDrop = (e: React.DragEvent<HTMLLabelElement>) => {
+    e.preventDefault();
+    if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+      const file = e.dataTransfer.files[0];
+
+      if (isImageFile(file)) {
+        const fileUrl = URL.createObjectURL(file);
+        setPreview(fileUrl);
+        onUpload(file);
+      } else {
+        alert('Please select a valid image file (PNG, JPG, JPEG).');
+      }
+    }
+  };
+
   return (
-    <label className="relative flex justify-center border-2 aspect-square overflow-hidden border-gray-300 border-dashed rounded-lg cursor-pointer bg-gray-200 dark:hover:bg-bray-800 dark:bg-gray-700 hover:bg-gray-100 dark:border-gray-600 dark:hover:border-gray-500 dark:hover:bg-gray-600">
+    <label className="relative flex justify-center border-2 aspect-square overflow-hidden border-gray-300 border-dashed rounded-lg cursor-pointer bg-gray-200 dark:hover:bg-bray-800 dark:bg-gray-700 hover:bg-gray-100 dark:border-gray-600 dark:hover:border-gray-500 dark:hover:bg-gray-600"
+    onDragOver={(e) => e.preventDefault()}
+      onDrop={handleFileDrop}>
       {preview ? (
         <>
           <img className="object-fill aspect-square flex-none" src={preview} alt="Preview" />
