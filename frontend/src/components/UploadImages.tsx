@@ -23,7 +23,7 @@ const UploadImages: React.FC<HeatmapProps> = ({ images }) => {
 
       Promise.all(loadPromises)
         .then(() => setImagesLoaded(true))
-        .catch((err) => console.error("Failed to load images", err));
+        .catch((err) => console.error('Failed to load images', err));
     }
   }, [images]);
 
@@ -36,7 +36,11 @@ const UploadImages: React.FC<HeatmapProps> = ({ images }) => {
   };
 
   return (
-    <div className={`bg-gray-200 g-gray-200 dark:bg-gray-700 p-4 rounded-lg relative ${imagesLoaded ? '' : 'opacity-50'}`}>
+    <div
+      className={`bg-gray-200 g-gray-200 dark:bg-gray-700 p-4 rounded-lg relative ${
+        imagesLoaded ? '' : 'opacity-50'
+      }`}
+    >
       {!imagesLoaded && <LoadingWheel />}
 
       {imagesLoaded && (
@@ -44,11 +48,14 @@ const UploadImages: React.FC<HeatmapProps> = ({ images }) => {
           {images.map((image, index) => (
             <img
               key={index}
-              className={`hover:z-10 rounded-lg hover:scale-150 transition-transform duration-200 ${hoveredIndex !== null && hoveredIndex !== index ? 'opacity-50' : ''}`}
+              className={`hover:z-10 rounded-lg hover:scale-150 hover:drop-shadow-xl hover:shadow-rose-600 transition-transform duration-100 ${
+                hoveredIndex !== null && hoveredIndex !== index ? 'opacity-50' : ''
+              }`}
               src={`${import.meta.env.VITE_API_URL}/${image}`}
               alt="Heatmap"
               onMouseEnter={() => handleImageHover(index)}
               onMouseLeave={handleImageLeave}
+              style={hoveredIndex === index ? { boxShadow: '0 0 10px 10px rgba(0, 0, 0, 0.4)' } : {}}  
             />
           ))}
         </div>

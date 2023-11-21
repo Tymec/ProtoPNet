@@ -39,7 +39,7 @@ export default function App() {
 
   const predict = (file: File) => {
     let k = optionK;
-    setLoading(true)
+    setLoading(true);
 
     if (isNaN(optionK) || optionK > 100) {
       setOptionK(10);
@@ -70,36 +70,55 @@ export default function App() {
       })
       .catch((err) => {
         console.error(err);
-      }).finally(() =>
-        setLoading(false)
-      );
+      })
+      .finally(() => setLoading(false));
+  };
+
+  const onImageUpload = (file?: File) => {
+    setConfidenceData({});
+    setPrediction(undefined);
+    setHeatmapImages([]);
+    setBoxImages([]);
+
+    if (file) setSelectedFile(file);
   };
 
   return (
     <div className="bg-white dark:bg-slate-800 min-h-screen p-8 flex flex-col gap-4">
       <div className="flex flex-row flex-wrap gap-4">
-      <div className={`flex-auto relative ${loading ? 'opacity-50' : ''}`}>
-        <ImageDropzone onUpload={(file) => file && setSelectedFile(file)} />
+        <div className={`flex-1 relative ${loading ? 'opacity-50' : ''}`}>
+          <ImageDropzone onUpload={onImageUpload} />
           {loading && <LoadingWheel className="absolute inset-0 m-auto" />}
-      </div>
-      <div className={`flex-shrink-0 flex-grow-[8] flex flex-col p-4 rounded-lg bg-gray-200 dark:bg-gray-700 relative ${loading ? 'opacity-50' : ''}`}>
-        {loading && <LoadingWheel className="absolute inset-0 m-auto" />}
+        </div>
+        <div
+          className={`flex-shrink-0 flex-grow-[2] flex flex-col p-4 rounded-lg bg-gray-200 dark:bg-gray-700 relative ${
+            loading ? 'opacity-50' : ''
+          }`}
+        >
+          {loading && <LoadingWheel className="absolute inset-0 m-auto" />}
           <h2 className="text-2xl font-semibold text-gray-800 dark:text-gray-100">Prediction</h2>
-          <ul className="list-disc list-inside pl-0" style={{paddingLeft: '1em'}}>
-              {prediction && (
-                  <li className={`text-lg ${getCoinfidanceColor(confidenceData[prediction])}`} style={{marginLeft: '-1em'}}>
-                      {prediction}: ({confidenceToPercentage(confidenceData[prediction])})
-                  </li>
-              )}
-              {Object.entries(confidenceData)
-                  .slice(1)
-                  .map(([label, confidence]) => (
-                      <li key={label} className="text-md text-gray-800 dark:text-gray-100" style={{marginLeft: '-1em'}}>
-                          {`${label}: ${confidenceToPercentage(confidence)}`}
-                      </li>
-                  ))}
+          <ul className="list-disc list-inside pl-[1em]">
+            {prediction && (
+              <li
+                className={`text-lg ${getCoinfidanceColor(confidenceData[prediction])}`}
+                style={{ marginLeft: '-1em' }}
+              >
+                {prediction}: ({confidenceToPercentage(confidenceData[prediction])})
+              </li>
+            )}
+            {Object.entries(confidenceData)
+              .slice(1)
+              .map(([label, confidence]) => (
+                <li
+                  key={label}
+                  className="text-md text-gray-800 dark:text-gray-100"
+                  style={{ marginLeft: '-1em' }}
+                >
+                  {`${label}: ${confidenceToPercentage(confidence)}`}
+                </li>
+              ))}
           </ul>
-      </div>
+        </div>
       </div>
       <div className="bg-gray-200 dark:bg-gray-700 p-4 rounded-lg flex flex-row flex-wrap items-center justify-around gap-4">
         <label htmlFor="k-option" className="text-gray-800 dark:text-gray-100">
@@ -140,13 +159,9 @@ export default function App() {
         </div>
       </div>
 
+      {heatmapImages && heatmapImages.length > 0 && <UploadImages images={heatmapImages} />}
 
-      {heatmapImages && heatmapImages.length > 0 && (
-        <UploadImages images={heatmapImages} />)}
-  
-      {boxImages && boxImages.length > 0 && (
-        <UploadImages images={boxImages}/>)}
-
+      {boxImages && boxImages.length > 0 && <UploadImages images={boxImages} />}
     </div>
   );
 }
