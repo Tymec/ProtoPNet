@@ -14,9 +14,14 @@ export default function ImageDropzone({ onUpload }: ImageDropzoneProps) {
   };
 
   return (
-    <label className="flex justify-center border-2 aspect-square overflow-hidden border-gray-300 border-dashed rounded-lg cursor-pointer bg-gray-200 dark:hover:bg-bray-800 dark:bg-gray-700 hover:bg-gray-100 dark:border-gray-600 dark:hover:border-gray-500 dark:hover:bg-gray-600">
+    <label className="relative flex justify-center border-2 aspect-square overflow-hidden border-gray-300 border-dashed rounded-lg cursor-pointer bg-gray-200 dark:hover:bg-bray-800 dark:bg-gray-700 hover:bg-gray-100 dark:border-gray-600 dark:hover:border-gray-500 dark:hover:bg-gray-600">
       {preview ? (
-        <img className="object-fill aspect-square flex-none" src={preview} alt="Preview" />
+        <>
+          <img className="object-fill aspect-square flex-none" src={preview} alt="Preview" />
+          <div className="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center transition-opacity duration-500 ease-in-out opacity-0 hover:opacity-100">
+            <span className="text-white">Upload new image</span>
+          </div>
+        </>
       ) : (
         <div className="flex flex-col items-center justify-center pt-5 pb-6">
           <svg
