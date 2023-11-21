@@ -100,7 +100,7 @@ export default function App() {
                 <div className="flex justify-between mb-1">
                   <span
                     className={`text-base font-medium text-black-700 ${
-                      index === 0 ? getCoinfidanceColor(confidence) : 'text-white'
+                      index === 0 ? getCoinfidanceColor(confidence) : 'dark:text-white'
                     }`}
                   >
                     {label}
