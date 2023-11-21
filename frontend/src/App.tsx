@@ -96,28 +96,23 @@ export default function App() {
           }`}
         >
           {loading && <LoadingWheel className="absolute inset-0 m-auto" />}
-          <h2 className="text-2xl font-semibold text-gray-800 dark:text-gray-100">Prediction</h2>
-          <ul className="list-disc list-inside pl-[1em]">
-            {prediction && (
-              <li
-                className={`text-lg ${getCoinfidanceColor(confidenceData[prediction])}`}
-                style={{ marginLeft: '-1em' }}
-              >
-                {prediction}: ({confidenceToPercentage(confidenceData[prediction])})
-              </li>
-            )}
-            {Object.entries(confidenceData)
-              .slice(1)
-              .map(([label, confidence]) => (
-                <li
-                  key={label}
-                  className="text-md text-gray-800 dark:text-gray-100"
-                  style={{ marginLeft: '-1em' }}
-                >
-                  {`${label}: ${confidenceToPercentage(confidence)}`}
-                </li>
-              ))}
-          </ul>
+          <h2 className="text-2xl font-semibold text-gray-800 dark:text-gray-100">Predictions:</h2>
+          <div>
+          {Object.entries(confidenceData).map(([label, confidence]) => (
+          <div key={label} className="mb-4">
+            <div className="flex justify-between mb-1">
+              <span className="text-base font-medium text-blue-700 dark:text-white">{label}</span>
+              <span className="text-sm font-medium text-blue-700 dark:text-white">{confidenceToPercentage(confidence)}</span>
+            </div>
+            <div className="w-full bg-gray-200 rounded-full h-2.5 dark:bg-gray-600">
+              <div className="bg-blue-600 h-2.5 rounded-full" style={{width: `${Math.round(confidence * 100)}%`}}></div>
+            </div>
+          </div>
+))}
+
+</div>
+
+
         </div>
       </div>
       <div className="bg-gray-200 dark:bg-gray-700 p-4 rounded-lg flex flex-row flex-wrap items-center justify-around gap-4">
