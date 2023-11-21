@@ -82,24 +82,24 @@ export default function App() {
         <ImageDropzone onUpload={(file) => file && setSelectedFile(file)} />
           {loading && <LoadingWheel className="absolute inset-0 m-auto" />}
       </div>
-        <div className={`flex-shrink-0 flex-grow-[8] flex flex-col p-4 rounded-lg bg-gray-200 dark:bg-gray-700 relative ${loading ? 'opacity-50' : ''}`}>
-            {loading && <LoadingWheel className="absolute inset-0 m-auto" />}
-            <h2 className="text-2xl font-semibold text-gray-800 dark:text-gray-100">Prediction</h2>
-            <ul className="list-disc list-inside">
-                {prediction && (
-                    <li className={`text-lg ${getCoinfidanceColor(confidenceData[prediction])}`}>
-                        {prediction}: ({confidenceToPercentage(confidenceData[prediction])})
-                    </li>
-                )}
-                {Object.entries(confidenceData)
-                    .slice(1)
-                    .map(([label, confidence]) => (
-                        <li key={label} className="text-md text-gray-800 dark:text-gray-100">
-                            {`${label}: ${confidenceToPercentage(confidence)}`}
-                        </li>
-                    ))}
-            </ul>
-        </div>
+      <div className={`flex-shrink-0 flex-grow-[8] flex flex-col p-4 rounded-lg bg-gray-200 dark:bg-gray-700 relative ${loading ? 'opacity-50' : ''}`}>
+        {loading && <LoadingWheel className="absolute inset-0 m-auto" />}
+          <h2 className="text-2xl font-semibold text-gray-800 dark:text-gray-100">Prediction</h2>
+          <ul className="list-disc list-inside pl-0" style={{paddingLeft: '1em'}}>
+              {prediction && (
+                  <li className={`text-lg ${getCoinfidanceColor(confidenceData[prediction])}`} style={{marginLeft: '-1em'}}>
+                      {prediction}: ({confidenceToPercentage(confidenceData[prediction])})
+                  </li>
+              )}
+              {Object.entries(confidenceData)
+                  .slice(1)
+                  .map(([label, confidence]) => (
+                      <li key={label} className="text-md text-gray-800 dark:text-gray-100" style={{marginLeft: '-1em'}}>
+                          {`${label}: ${confidenceToPercentage(confidence)}`}
+                      </li>
+                  ))}
+          </ul>
+      </div>
       </div>
       <div className="bg-gray-200 dark:bg-gray-700 p-4 rounded-lg flex flex-row flex-wrap items-center justify-around gap-4">
         <label htmlFor="k-option" className="text-gray-800 dark:text-gray-100">
