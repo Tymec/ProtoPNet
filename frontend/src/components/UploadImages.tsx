@@ -35,7 +35,7 @@ const UploadImages: React.FC<HeatmapProps> = ({ images}) => {
           {images.map((image, index) => (
             <img
               key={index}
-              className="rounded-lg"
+              className="rounded-lg hover:scale-150 transition-transform duration-200 hover:z-10"
               src={`${import.meta.env.VITE_API_URL}/${image}`}
               alt="Heatmap"
             />
