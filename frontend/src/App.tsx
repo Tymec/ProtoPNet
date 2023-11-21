@@ -18,7 +18,6 @@ export default function App() {
   const [selectedFile, setSelectedFile] = useState<File | undefined>(undefined);
   const [loading, setLoading] = useState(false);
 
-  const [prediction, setPrediction] = useState<string | undefined>(undefined);
   const [confidenceData, setConfidenceData] = useState<{ [key: string]: number }>({});
   const [heatmapImages, setHeatmapImages] = useState<string[]>([]);
   const [boxImages, setBoxImages] = useState<string[]>([]);
@@ -63,7 +62,6 @@ export default function App() {
     })
       .then((res) => res.json())
       .then((data) => {
-        setPrediction(data.prediction);
         setHeatmapImages(data.heatmap_urls);
         setBoxImages(data.box_urls);
         setConfidenceData(data.confidence);
@@ -76,7 +74,6 @@ export default function App() {
 
   const onImageUpload = (file?: File) => {
     setConfidenceData({});
-    setPrediction(undefined);
     setHeatmapImages([]);
     setBoxImages([]);
 
@@ -98,21 +95,29 @@ export default function App() {
           {loading && <LoadingWheel className="absolute inset-0 m-auto" />}
           <h2 className="text-2xl font-semibold text-gray-800 dark:text-gray-100">Predictions:</h2>
           <div>
-          {Object.entries(confidenceData).map(([label, confidence]) => (
-          <div key={label} className="mb-4">
-            <div className="flex justify-between mb-1">
-              <span className="text-base font-medium text-blue-700 dark:text-white">{label}</span>
-              <span className="text-sm font-medium text-blue-700 dark:text-white">{confidenceToPercentage(confidence)}</span>
-            </div>
-            <div className="w-full bg-gray-200 rounded-full h-2.5 dark:bg-gray-600">
-              <div className="bg-blue-600 h-2.5 rounded-full" style={{width: `${Math.round(confidence * 100)}%`}}></div>
-            </div>
+            {Object.entries(confidenceData).map(([label, confidence], index) => (
+              <div key={label} className="mb-4">
+                <div className="flex justify-between mb-1">
+                  <span
+                    className={`text-base font-medium text-black-700 ${
+                      index === 0 ? getCoinfidanceColor(confidence) : 'text-white'
+                    }`}
+                  >
+                    {label}
+                  </span>
+                  <span className="text-sm font-medium text-black-700 dark:text-white">
+                    {confidenceToPercentage(confidence)}
+                  </span>
+                </div>
+                <div className="w-full bg-gray-400 rounded-full h-2.5 dark:bg-gray-600">
+                  <div
+                    className="bg-blue-500 h-2.5 rounded-full"
+                    style={{ width: `${Math.round(confidence * 100)}%` }}
+                  ></div>
+                </div>
+              </div>
+            ))}
           </div>
-))}
-
-</div>
-
-
         </div>
       </div>
       <div className="bg-gray-200 dark:bg-gray-700 p-4 rounded-lg flex flex-row flex-wrap items-center justify-around gap-4">

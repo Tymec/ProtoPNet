@@ -20,7 +20,9 @@ const UploadButton: React.FC<UploadButtonProps> = ({ onClick, isFileSelected }) 
   return (
     <button
       className={`ml-2 bg-blue-500 w-30 text-white rounded-lg p-2 ${
-        isFileSelected ? 'transition ease-in-out delay-150 bg-blue-500 hover:-translate-y-1 hover:scale-110 hover:bg-blue-600 duration-200' : 'cursor-not-allowed'
+        isFileSelected
+          ? 'transition ease-in-out delay-150 bg-blue-500 hover:-translate-y-1 hover:scale-110 hover:bg-blue-600 duration-200'
+          : 'cursor-not-allowed'
       }`}
       onClick={handleClick}
       disabled={!isFileSelected && isClickedOnce}

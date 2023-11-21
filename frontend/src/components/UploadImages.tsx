@@ -55,7 +55,9 @@ const UploadImages: React.FC<HeatmapProps> = ({ images }) => {
               alt="Heatmap"
               onMouseEnter={() => handleImageHover(index)}
               onMouseLeave={handleImageLeave}
-              style={hoveredIndex === index ? { boxShadow: '0 0 10px 10px rgba(0, 0, 0, 0.4)' } : {}}  
+              style={
+                hoveredIndex === index ? { boxShadow: '0 0 10px 10px rgba(0, 0, 0, 0.4)' } : {}
+              }
             />
           ))}
         </div>
