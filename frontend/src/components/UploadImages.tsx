@@ -5,9 +5,8 @@ interface HeatmapProps {
   images: string[];
 }
 
-const UploadImages: React.FC<HeatmapProps> = ({ images }) => {
+const ImageDrawer: React.FC<HeatmapProps> = ({ images }) => {
   const [imagesLoaded, setImagesLoaded] = useState(false);
-  const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
 
   useEffect(() => {
     setImagesLoaded(false);
@@ -27,14 +26,6 @@ const UploadImages: React.FC<HeatmapProps> = ({ images }) => {
     }
   }, [images]);
 
-  const handleImageHover = (index: number) => {
-    setHoveredIndex(index);
-  };
-
-  const handleImageLeave = () => {
-    setHoveredIndex(null);
-  };
-
   return (
     <div
       className={`bg-gray-200 g-gray-200 dark:bg-gray-700 p-4 rounded-lg relative ${
@@ -44,20 +35,13 @@ const UploadImages: React.FC<HeatmapProps> = ({ images }) => {
       {!imagesLoaded && <LoadingWheel />}
 
       {imagesLoaded && (
-        <div className="flex flex-row items-center justify-center flex-wrap gap-4">
+        <div className="flex flex-row items-center justify-center flex-wrap gap-4 group">
           {images.map((image, index) => (
             <img
               key={index}
-              className={`hover:z-10 rounded-lg hover:scale-150 hover:drop-shadow-xl hover:shadow-rose-600 transition-transform duration-100 ${
-                hoveredIndex !== null && hoveredIndex !== index ? 'opacity-50' : ''
-              }`}
+              className="hover:shadow-lg hover:shadow-black hover:z-10 hover:scale-125 hover:!blur-none group-hover:blur-sm hover:ease-out hover:transition-transform hover:duration-100 rounded-lg"
               src={`${import.meta.env.VITE_API_URL}/${image}`}
               alt="Heatmap"
-              onMouseEnter={() => handleImageHover(index)}
-              onMouseLeave={handleImageLeave}
-              style={
-                hoveredIndex === index ? { boxShadow: '0 0 10px 10px rgba(0, 0, 0, 0.4)' } : {}
-              }
             />
           ))}
         </div>
@@ -66,4 +50,4 @@ const UploadImages: React.FC<HeatmapProps> = ({ images }) => {
   );
 };
 
-export default UploadImages;
+export default ImageDrawer;

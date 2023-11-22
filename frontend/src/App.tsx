@@ -3,7 +3,7 @@ import { useState } from 'react';
 import ColorSchemeToggle from './components/ColorSchemeToggle';
 import ImageDropzone from './components/ImageDropzone';
 import LoadingWheel from './components/LoadingWheel';
-import UploadImages from './components/UploadImages';
+import ImageDrawer from './components/UploadImages';
 
 enum ReturnType {
   NONE = 'none',
@@ -96,7 +96,7 @@ export default function App() {
           <h2 className="text-2xl font-semibold text-gray-800 dark:text-gray-100">Predictions:</h2>
           <div>
             {Object.entries(confidenceData).map(([label, confidence], index) => (
-              <div key={label} className="mb-4">
+              <div key={index} className="mb-4">
                 <div className="flex justify-between mb-1">
                   <span
                     className={`text-base font-medium text-black-700 ${
@@ -111,9 +111,9 @@ export default function App() {
                 </div>
                 <div className="w-full bg-gray-400 rounded-full h-2.5 dark:bg-gray-600">
                   <div
-                    className="bg-blue-500 h-2.5 rounded-full"
+                    className="bg-blue-500 h-2.5 rounded-full animate-slider"
                     style={{ width: `${Math.round(confidence * 100)}%` }}
-                  ></div>
+                  />
                 </div>
               </div>
             ))}
@@ -159,9 +159,9 @@ export default function App() {
         </div>
       </div>
 
-      {heatmapImages && heatmapImages.length > 0 && <UploadImages images={heatmapImages} />}
+      {heatmapImages && heatmapImages.length > 0 && <ImageDrawer images={heatmapImages} />}
 
-      {boxImages && boxImages.length > 0 && <UploadImages images={boxImages} />}
+      {boxImages && boxImages.length > 0 && <ImageDrawer images={boxImages} />}
     </div>
   );
 }
