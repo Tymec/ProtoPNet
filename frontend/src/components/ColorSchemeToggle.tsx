@@ -12,7 +12,7 @@ export default function ColorSchemeToggle() {
   };
 
   return (
-    <label className="flex w-fit relative">
+    <label className="relative flex w-fit">
       <input
         type="checkbox"
         aria-labelledby="color scheme toggle"
@@ -20,9 +20,9 @@ export default function ColorSchemeToggle() {
         checked={checked}
         onChange={handleChange}
       />
-      <span className="flex h-10 w-16 flex-shrink-0 items-center rounded-full bg-gray-300 p-1 duration-300 ease-in-out after:h-8 after:w-8 after:rounded-full after:bg-white after:shadow-md after:duration-300 peer-checked:bg-green-400 peer-checked:after:bg-white peer-checked:after:translate-x-6">
+      <span className="flex h-10 w-16 flex-shrink-0 items-center rounded-full bg-gray-300 p-1 shadow-inner shadow-black duration-300 ease-in-out after:h-8 after:w-8 after:rounded-full after:bg-white after:shadow-md after:shadow-black after:duration-300 peer-checked:bg-green-400 peer-checked:after:translate-x-6 peer-checked:after:bg-white">
         <span
-          className={`z-10 absolute p-1 duration-300 ease-in-out ${
+          className={`absolute z-10 p-1 duration-300 ease-in-out ${
             checked ? 'translate-x-6' : '-translate-x-0'
           }`}
         >
