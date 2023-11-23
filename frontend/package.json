@@ -16,7 +16,8 @@
     "@tabler/icons-react": "^2.41.0",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
-    "react-simple-maps": "^3.0.0"
+    "react-simple-maps": "^3.0.0",
+    "react-tooltip": "^5.24.0"
   },
   "devDependencies": {
     "@testing-library/react": "^14.1.0",
