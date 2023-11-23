@@ -39,7 +39,7 @@ export default function ImageDrawer({ images, overlay }: HeatmapProps) {
             <div className="relative" key={index}>
               <img
                 className={`rounded-lg object-contain shadow-md shadow-black
-              ${hoverIndex === index ? 'z-10 scale-125 !blur-none ' : ''}
+              ${hoverIndex === index ? 'z-10 scale-125 !blur-none' : ''}
               ${hoverIndex !== index && hoverIndex !== -1 ? '!blur-sm' : ''}`}
                 src={`${import.meta.env.VITE_API_URL}/${image}`}
                 alt="Heatmap"
@@ -48,7 +48,7 @@ export default function ImageDrawer({ images, overlay }: HeatmapProps) {
               />
               <img
                 src={`${import.meta.env.VITE_API_URL}/${overlay[index]}`}
-                className={`pointer-events-none absolute inset-0 z-20 rounded-lg object-contain mix-blend-screen
+                className={`pointer-events-none absolute inset-0 z-20 scale-125 rounded-lg object-contain mix-blend-screen
                 ${hoverIndex === index ? 'opacity-100' : 'opacity-0'}`}
                 alt="Heatmap Overlay"
               />
