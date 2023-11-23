@@ -36,16 +36,23 @@ export default function ImageDrawer({ images, overlay }: HeatmapProps) {
       {imagesLoaded && (
         <div className="flex flex-row flex-wrap items-center justify-center gap-4">
           {images.map((image, index) => (
-            <img
-              key={index}
-              className={`rounded-lg object-contain shadow-md shadow-black
+            <div className="relative" key={index}>
+              <img
+                className={`rounded-lg object-contain shadow-md shadow-black
               ${hoverIndex === index ? 'z-10 scale-125 !blur-none ' : ''}
               ${hoverIndex !== index && hoverIndex !== -1 ? '!blur-sm' : ''}`}
-              src={`${import.meta.env.VITE_API_URL}/${image}`}
-              alt="Heatmap"
-              onMouseEnter={() => setHoverIndex(index)}
-              onMouseLeave={() => setHoverIndex(-1)}
-            />
+                src={`${import.meta.env.VITE_API_URL}/${image}`}
+                alt="Heatmap"
+                onMouseEnter={() => setHoverIndex(index)}
+                onMouseLeave={() => setHoverIndex(-1)}
+              />
+              <img
+                src={`${import.meta.env.VITE_API_URL}/${overlay[index]}`}
+                className={`pointer-events-none absolute inset-0 z-20 rounded-lg object-contain mix-blend-screen
+                ${hoverIndex === index ? 'opacity-100' : 'opacity-0'}`}
+                alt="Heatmap Overlay"
+              />
+            </div>
           ))}
         </div>
       )}

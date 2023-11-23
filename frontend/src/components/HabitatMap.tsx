@@ -5,10 +5,15 @@ import { Tooltip, TooltipRefProps } from 'react-tooltip';
 
 interface HabitatMapProps {
   countries: string[];
-  width?: number;
+  mapWidth?: number;
+  mapHeight?: number;
 }
 
-export default function HabitatMap({ countries, width = 800 }: HabitatMapProps) {
+export default function HabitatMap({
+  countries,
+  mapWidth = 800,
+  mapHeight = 600,
+}: HabitatMapProps) {
   const tooltipRef = useRef<TooltipRefProps>(null);
 
   return (
@@ -19,9 +24,10 @@ export default function HabitatMap({ countries, width = 800 }: HabitatMapProps) 
         projectionConfig={{
           scale: 140,
         }}
-        width={width}
+        width={mapWidth}
+        height={mapHeight}
       >
-        <ZoomableGroup zoom={1}>
+        <ZoomableGroup zoom={1} onMoveStart={() => tooltipRef.current?.close()}>
           <Geographies geography={worldJson}>
             {({ geographies }) =>
               geographies.map((geo) => {
@@ -40,15 +46,13 @@ export default function HabitatMap({ countries, width = 800 }: HabitatMapProps) 
                     ${
                       countries.includes(fips_10) ? 'hover:fill-rose-400' : 'hover:fill-slate-100'
                     }`}
-                      onMouseEnter={() => {
+                      onMouseEnter={() =>
                         tooltipRef.current?.open({
                           content: geo.properties.name,
                           anchorSelect: `.geo-marker-${geo.rsmKey}`,
-                        });
-                      }}
-                      onMouseLeave={() => {
-                        tooltipRef.current?.close();
-                      }}
+                        })
+                      }
+                      onMouseLeave={() => tooltipRef.current?.close()}
                     />
                     <Marker
                       key={geo.properties.name}
