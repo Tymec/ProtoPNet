@@ -6,6 +6,11 @@ from fastapi import FastAPI, File, Form, HTTPException, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
+from PIL import Image
+from pydantic import BaseModel
+
+from app import BOX_DIR, CWD, FAVICON_PATH, HEATMAP_DIR, MODEL_INFO_PATH, MODEL_PATH, ROBOTS_PATH, STATIC_DIR
+from app.utils import get_habitat
 from net.inference import (
     box_by_top_k_prototype,
     get_classification,
@@ -14,10 +19,6 @@ from net.inference import (
     load_model,
     predict,
 )
-from PIL import Image
-from pydantic import BaseModel
-
-from app import BOX_DIR, CWD, FAVICON_PATH, HEATMAP_DIR, MODEL_INFO_PATH, MODEL_PATH, ROBOTS_PATH, STATIC_DIR
 
 
 class PredictReturnType(str, Enum):
@@ -28,13 +29,14 @@ class PredictReturnType(str, Enum):
 
 
 class PredictResponse(BaseModel):
+    index: int
     prediction: str
+    habitat: list[str]
     confidence: dict[str, float]
     heatmap_urls: list[str] | None
     box_urls: list[str] | None
 
 
-# load model
 model = load_model(MODEL_PATH, MODEL_INFO_PATH)
 
 app = FastAPI()
@@ -101,7 +103,9 @@ async def get_prediction(
     confidence_map = get_confidence_map(con)
 
     return_data = PredictResponse(
+        index=pred,
         prediction=get_classification(pred),
+        habitat=get_habitat(pred),
         confidence=confidence_map,
         heatmap_urls=None,
         box_urls=None,
