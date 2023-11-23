@@ -1,12 +1,16 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import LoadingWheel from './LoadingWheel';
 
 interface HeatmapProps {
   images: string[];
+  overlay: string[];
 }
 
-const ImageDrawer: React.FC<HeatmapProps> = ({ images }) => {
+export default function ImageDrawer({ images, overlay }: HeatmapProps) {
   const [imagesLoaded, setImagesLoaded] = useState(false);
+  const [hoverIndex, setHoverIndex] = useState(-1);
+
+  // TODO: Apply overlay on hover with 'mix-blend-mode: screen'
 
   useEffect(() => {
     setImagesLoaded(false);
@@ -27,27 +31,24 @@ const ImageDrawer: React.FC<HeatmapProps> = ({ images }) => {
   }, [images]);
 
   return (
-    <div
-      className={`bg-gray-200 g-gray-200 dark:bg-gray-700 p-4 rounded-lg relative ${
-        imagesLoaded ? '' : 'opacity-50'
-      }`}
-    >
+    <div className={`rounded-lg bg-gray-200 p-4 shadow-md shadow-black dark:bg-gray-700`}>
       {!imagesLoaded && <LoadingWheel />}
-
       {imagesLoaded && (
-        <div className="flex flex-row items-center justify-center flex-wrap gap-4 group">
+        <div className="flex flex-row flex-wrap items-center justify-center gap-4">
           {images.map((image, index) => (
             <img
               key={index}
-              className="hover:shadow-lg hover:shadow-black hover:z-10 hover:scale-125 hover:!blur-none group-hover:blur-sm hover:ease-out hover:transition-transform hover:duration-100 rounded-lg"
+              className={`rounded-lg object-contain shadow-md shadow-black
+              ${hoverIndex === index ? 'z-10 scale-125 !blur-none ' : ''}
+              ${hoverIndex !== index && hoverIndex !== -1 ? '!blur-sm' : ''}`}
               src={`${import.meta.env.VITE_API_URL}/${image}`}
               alt="Heatmap"
+              onMouseEnter={() => setHoverIndex(index)}
+              onMouseLeave={() => setHoverIndex(-1)}
             />
           ))}
         </div>
       )}
     </div>
   );
-};
-
-export default ImageDrawer;
+}

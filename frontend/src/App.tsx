@@ -1,9 +1,12 @@
-import UploadButton from '@/components/UploadButton';
+import {
+  ColorSchemeToggle,
+  HabitatMap,
+  ImageDrawer,
+  ImageDropzone,
+  LoadingWheel,
+  UploadButton,
+} from '@/components';
 import { useState } from 'react';
-import ColorSchemeToggle from './components/ColorSchemeToggle';
-import ImageDropzone from './components/ImageDropzone';
-import LoadingWheel from './components/LoadingWheel';
-import ImageDrawer from './components/UploadImages';
 
 enum ReturnType {
   NONE = 'none',
@@ -19,6 +22,7 @@ export default function App() {
   const [loading, setLoading] = useState(false);
 
   const [confidenceData, setConfidenceData] = useState<{ [key: string]: number }>({});
+  const [habitatData, setHabitatData] = useState<string[]>(['US', 'PL']);
   const [heatmapImages, setHeatmapImages] = useState<string[]>([]);
   const [boxImages, setBoxImages] = useState<string[]>([]);
 
@@ -30,10 +34,6 @@ export default function App() {
     } else {
       return 'text-red-500';
     }
-  };
-
-  const confidenceToPercentage = (confidence: number) => {
-    return `${confidence < 0.0001 ? '<0.01' : (confidence * 100).toFixed(2)}%`;
   };
 
   const predict = (file: File) => {
@@ -62,9 +62,10 @@ export default function App() {
     })
       .then((res) => res.json())
       .then((data) => {
+        setConfidenceData(data.confidence);
+        // setHabitatData(data.habitat);
         setHeatmapImages(data.heatmap_urls);
         setBoxImages(data.box_urls);
-        setConfidenceData(data.confidence);
       })
       .catch((err) => {
         console.error(err);
@@ -72,46 +73,53 @@ export default function App() {
       .finally(() => setLoading(false));
   };
 
-  const onImageUpload = (file?: File) => {
-    setConfidenceData({});
-    setHeatmapImages([]);
-    setBoxImages([]);
-
-    if (file) setSelectedFile(file);
-  };
-
   return (
-    <div className="bg-white dark:bg-slate-800 min-h-screen p-8 flex flex-col gap-4">
-      <div className="flex flex-row flex-wrap gap-4">
-        <div className={`flex-1 relative ${loading ? 'opacity-50' : ''}`}>
-          <ImageDropzone onUpload={onImageUpload} />
-          {loading && <LoadingWheel className="absolute inset-0 m-auto" />}
+    <div className="flex min-h-screen flex-col gap-4 bg-white p-8 dark:bg-slate-800">
+      <div className="flex flex-row flex-wrap items-stretch justify-center gap-4">
+        <div className={`flex-shrink flex-grow basis-1/6 ${loading ? 'animate-pulse' : ''}`}>
+          <ImageDropzone
+            onUpload={(file: File) => {
+              setConfidenceData({});
+              //setHabitatData([]);
+              setHeatmapImages([]);
+              setBoxImages([]);
+              setSelectedFile(file);
+            }}
+          />
+          {loading && <LoadingWheel absolute />}
         </div>
         <div
-          className={`flex-shrink-0 flex-grow-[2] flex flex-col p-4 rounded-lg bg-gray-200 dark:bg-gray-700 relative ${
-            loading ? 'opacity-50' : ''
-          }`}
+          className={`flex flex-shrink flex-grow basis-1/5 animate-spin flex-col rounded-lg bg-gray-200 p-4 dark:bg-gray-700 ${
+            loading ? 'animate-pulse' : ''
+          } shadow-md shadow-black`}
         >
-          {loading && <LoadingWheel className="absolute inset-0 m-auto" />}
-          <h2 className="text-2xl font-semibold text-gray-800 dark:text-gray-100">Predictions:</h2>
-          <div>
+          {loading && <LoadingWheel absolute />}
+          <h2
+            className="text-2xl font-semibold text-gray-800 shadow-white dark:text-gray-100 dark:shadow-black"
+            style={{
+              textShadow: '0px 3px 2px var(--tw-shadow-color)',
+            }}
+          >
+            Predictions:
+          </h2>
+          <div className="flex flex-col gap-4">
             {Object.entries(confidenceData).map(([label, confidence], index) => (
-              <div key={index} className="mb-4">
-                <div className="flex justify-between mb-1">
+              <div key={index}>
+                <div className="mb-1 flex justify-between">
                   <span
-                    className={`text-base font-medium text-black-700 ${
+                    className={`text-black-700 text-base font-medium ${
                       index === 0 ? getCoinfidanceColor(confidence) : 'dark:text-white'
                     }`}
                   >
                     {label}
                   </span>
-                  <span className="text-sm font-medium text-black-700 dark:text-white">
-                    {confidenceToPercentage(confidence)}
+                  <span className="text-black-700 text-sm font-medium dark:text-white">
+                    {confidence < 0.0001 ? '<0.01' : (confidence * 100).toFixed(2)}%
                   </span>
                 </div>
-                <div className="w-full bg-gray-400 rounded-full h-2.5 dark:bg-gray-600">
+                <div className="h-2.5 w-full rounded-full bg-gray-400 shadow-inner shadow-black dark:bg-gray-600">
                   <div
-                    className="bg-blue-500 h-2.5 rounded-full animate-slider"
+                    className="h-2.5 animate-slider rounded-full bg-blue-500 shadow-sm shadow-black ease-in-out"
                     style={{ width: `${Math.round(confidence * 100)}%` }}
                   />
                 </div>
@@ -119,8 +127,11 @@ export default function App() {
             ))}
           </div>
         </div>
+        <div className="flex flex-auto flex-col items-center justify-center rounded-lg bg-gray-200 shadow-md shadow-black dark:bg-gray-700">
+          <HabitatMap countries={habitatData} />
+        </div>
       </div>
-      <div className="bg-gray-200 dark:bg-gray-700 p-4 rounded-lg flex flex-row flex-wrap items-center justify-around gap-4">
+      <div className="flex w-full flex-row flex-wrap items-center justify-center gap-16 rounded-lg bg-gray-200 p-4 shadow-md shadow-black dark:bg-gray-700">
         <label htmlFor="k-option" className="text-gray-800 dark:text-gray-100">
           K:
           <input
@@ -131,16 +142,16 @@ export default function App() {
             placeholder="1-100"
             value={optionK}
             onChange={(e) => setOptionK(parseInt(e.target.value))}
-            className="ml-2 bg-gray-500 dark:bg-gray-800 text-gray-200 dark:text-gray-100 rounded-lg p-2"
+            className="rounded-lg bg-gray-500 p-2 text-gray-200 shadow-inner shadow-black outline-none dark:bg-gray-800 dark:text-gray-100"
           />
         </label>
-        <label htmlFor="return-type" className="text-gray-800 dark:text-gray-100">
+        <label htmlFor="return-type" className="select-none text-gray-800 dark:text-gray-100">
           Return:
           <select
             id="return-type"
             value={optionReturnType}
             onChange={(e) => setOptionReturnType(e.target.value as ReturnType)}
-            className="ml-2 bg-gray-500 dark:bg-gray-800 text-gray-200 dark:text-gray-100 rounded-lg p-2"
+            className="rounded-lg bg-gray-500 p-2 text-gray-200 shadow-inner shadow-black outline-none dark:bg-gray-800 dark:text-gray-100"
           >
             <option value={ReturnType.BOTH}>Both</option>
             <option value={ReturnType.HEATMAPS}>Heatmaps</option>
@@ -148,20 +159,17 @@ export default function App() {
             <option value={ReturnType.NONE}>None</option>
           </select>
         </label>
-        <div className="">
-          <ColorSchemeToggle />
-        </div>
-        <div className="">
-          <UploadButton
-            onClick={() => selectedFile && predict(selectedFile)}
-            isFileSelected={!!selectedFile}
-          />
-        </div>
+        <ColorSchemeToggle />
+        <UploadButton
+          onClick={() => selectedFile && predict(selectedFile)}
+          isFileSelected={!!selectedFile}
+        />
       </div>
 
-      {heatmapImages && heatmapImages.length > 0 && <ImageDrawer images={heatmapImages} />}
-
-      {boxImages && boxImages.length > 0 && <ImageDrawer images={boxImages} />}
+      {heatmapImages && heatmapImages.length > 0 && (
+        <ImageDrawer images={heatmapImages} overlay={boxImages} />
+      )}
+      {/* {boxImages && boxImages.length > 0 && <ImageDrawer images={boxImages} />} */}
     </div>
   );
 }
