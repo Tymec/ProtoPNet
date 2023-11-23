@@ -5,10 +5,11 @@ from pathlib import Path
 import cv2
 import numpy as np
 import torch
+from PIL import Image
+
 from net import CLASSIFICATIONS, MEAN, PERCENTILE, STD
 from net.model import PPNet
 from net.vgg_features import VGG_features
-from PIL import Image
 
 DEVICE = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
@@ -274,7 +275,9 @@ def box_by_top_k_prototype(
         y_max = np.max(indices[1])
 
         # Draw bounding box
-        img = np.uint8(255 * original_img)
+        # img = np.uint8(255 * original_img)
+        # Instead of overlaying box on original image, create an empty image and draw the box on it
+        img = np.zeros((img_size, img_size, 3), np.uint8)
         img = cv2.rectangle(
             img,
             (y_min, x_min),
@@ -321,3 +324,13 @@ def get_classification(idx: int) -> str:
         Classification of the given index.
     """
     return CLASSIFICATIONS[idx]
+
+
+def classification_count() -> int:
+    """
+    Gets the number of classifications.
+
+    Returns:
+        Number of classifications.
+    """
+    return len(CLASSIFICATIONS)
