@@ -1,3 +1,4 @@
+import habitatJson from '@/assets/birds.habitat.json';
 import {
   ColorSchemeToggle,
   HabitatMap,
@@ -22,7 +23,7 @@ export default function App() {
   const [loading, setLoading] = useState(false);
 
   const [confidenceData, setConfidenceData] = useState<{ [key: string]: number }>({});
-  const [habitatData, setHabitatData] = useState<string[]>(['US', 'PL']);
+  const [habitatData, setHabitatData] = useState<string[]>([]);
   const [heatmapImages, setHeatmapImages] = useState<string[]>([]);
   const [boxImages, setBoxImages] = useState<string[]>([]);
 
@@ -63,9 +64,14 @@ export default function App() {
       .then((res) => res.json())
       .then((data) => {
         setConfidenceData(data.confidence);
-        // setHabitatData(data.habitat);
         setHeatmapImages(data.heatmap_urls);
         setBoxImages(data.box_urls);
+
+        setHabitatData(
+          data.prediction in habitatJson
+            ? habitatJson[data.prediction as keyof typeof habitatJson]
+            : []
+        );
       })
       .catch((err) => {
         console.error(err);
@@ -80,7 +86,7 @@ export default function App() {
           <ImageDropzone
             onUpload={(file: File) => {
               setConfidenceData({});
-              //setHabitatData([]);
+              setHabitatData([]);
               setHeatmapImages([]);
               setBoxImages([]);
               setSelectedFile(file);
@@ -89,7 +95,7 @@ export default function App() {
           {loading && <LoadingWheel absolute />}
         </div>
         <div
-          className={`flex flex-shrink flex-grow basis-1/5 animate-spin flex-col rounded-lg bg-gray-200 p-4 dark:bg-gray-700 ${
+          className={`flex flex-shrink flex-grow basis-1/5 flex-col rounded-lg bg-gray-200 p-4 dark:bg-gray-700 ${
             loading ? 'animate-pulse' : ''
           } shadow-md shadow-black`}
         >
@@ -142,7 +148,7 @@ export default function App() {
             placeholder="1-100"
             value={optionK}
             onChange={(e) => setOptionK(parseInt(e.target.value))}
-            className="rounded-lg bg-gray-500 p-2 text-gray-200 shadow-inner shadow-black outline-none dark:bg-gray-800 dark:text-gray-100"
+            className="ml-2 rounded-lg bg-gray-500 p-2 text-gray-200 shadow-inner shadow-black outline-none dark:bg-gray-800 dark:text-gray-100"
           />
         </label>
         <label htmlFor="return-type" className="select-none text-gray-800 dark:text-gray-100">
@@ -151,7 +157,7 @@ export default function App() {
             id="return-type"
             value={optionReturnType}
             onChange={(e) => setOptionReturnType(e.target.value as ReturnType)}
-            className="rounded-lg bg-gray-500 p-2 text-gray-200 shadow-inner shadow-black outline-none dark:bg-gray-800 dark:text-gray-100"
+            className="ml-2 rounded-lg bg-gray-500 p-2 text-gray-200 shadow-inner shadow-black outline-none dark:bg-gray-800 dark:text-gray-100"
           >
             <option value={ReturnType.BOTH}>Both</option>
             <option value={ReturnType.HEATMAPS}>Heatmaps</option>
