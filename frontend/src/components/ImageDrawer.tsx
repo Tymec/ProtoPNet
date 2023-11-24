@@ -45,6 +45,7 @@ export default function ImageDrawer({ images, overlay }: HeatmapProps) {
                 alt="Heatmap"
                 onMouseEnter={() => setHoverIndex(index)}
                 onMouseLeave={() => setHoverIndex(-1)}
+                style={{ position: 'relative' }}
               />
               <img
                 src={`${import.meta.env.VITE_API_URL}/${overlay[index]}`}
