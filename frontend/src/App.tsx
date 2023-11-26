@@ -182,7 +182,6 @@ export default function App() {
               <option value={ReturnType.NONE}>None</option>
             </select>
           </label>
-          {/* <GlobeToggle onClick={() => setGlobeMap((g) => !g)} value={globeMap} /> */}
           <IconToggle
             IconOn={<IconWorld />}
             IconOff={<IconMap />}
@@ -204,7 +203,6 @@ export default function App() {
         {heatmapImages && heatmapImages.length > 0 && (
           <ImageDrawer images={heatmapImages} overlay={boxImages} />
         )}
-        {/* {boxImages && boxImages.length > 0 && <ImageDrawer images={boxImages} />} */}
       </div>
     </div>
   );
