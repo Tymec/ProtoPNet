@@ -12,10 +12,6 @@ build:
 	pnpm build
 	pnpm preview
 
-preview:
-	pnpm build
-	pnpm preview
-
 test:
 	pnpm test
 
@@ -30,4 +26,4 @@ lint: eslint format
 clean:
 	rm -rf dist/	
 
-.PHONY: default install dev preview build test eslint format lint
+.PHONY: default install dev build test eslint format lint

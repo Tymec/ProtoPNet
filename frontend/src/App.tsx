@@ -1,4 +1,3 @@
-import habitatJson from '@/assets/birds.habitat.json';
 import {
   ColorSchemeToggle,
   HabitatMap,
@@ -7,7 +6,7 @@ import {
   LoadingWheel,
   UploadButton,
 } from '@/components';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 
 enum ReturnType {
   NONE = 'none',
@@ -26,6 +25,23 @@ export default function App() {
   const [habitatData, setHabitatData] = useState<string[]>([]);
   const [heatmapImages, setHeatmapImages] = useState<string[]>([]);
   const [boxImages, setBoxImages] = useState<string[]>([]);
+
+  const [habitats, setHabitats] = useState<{ [key: string]: string[] }>({});
+
+  useEffect(() => {
+    fetch(import.meta.env.VITE_HABITAT_DATA_URL, {
+      method: 'GET',
+      headers: {
+        accept: 'application/json',
+      },
+    })
+      .then((res) => res.json())
+      .then((data) => {
+        console.log(data);
+        setHabitats(data);
+      })
+      .catch((err) => console.error(err));
+  }, []);
 
   const getCoinfidanceColor = (confidence: number) => {
     if (confidence > 0.8) {
@@ -68,9 +84,7 @@ export default function App() {
         setBoxImages(data.box_urls);
 
         setHabitatData(
-          data.prediction in habitatJson
-            ? habitatJson[data.prediction as keyof typeof habitatJson]
-            : []
+          data.prediction in habitats ? habitats[data.prediction as keyof typeof habitats] : []
         );
       })
       .catch((err) => {

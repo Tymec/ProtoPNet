@@ -1,8 +1,9 @@
-import worldJson from '@/assets/world.geo.json';
 import { timer } from 'd3';
 import { useEffect, useState } from 'react';
 import { ComposableMap, Geographies, Geography, Graticule } from 'react-simple-maps';
 import { Tooltip } from 'react-tooltip';
+
+// TODO: Optimize map rendering
 
 interface HabitatMapProps {
   countries: string[];
@@ -51,7 +52,7 @@ export default function HabitatMap({
       >
         {graticule && <Graticule stroke="#999" clipPath="url(#rsm-sphere)" />}
         {/* <ZoomableGroup zoom={1} center={[0, 0]} onMoveStart={() => setTooltipContent('')}> */}
-        <Geographies geography={worldJson}>
+        <Geographies geography={import.meta.env.VITE_HABITAT_GEO_URL}>
           {({ geographies }) =>
             geographies.map((geo) => {
               const { fips_10 } = geo.properties;
