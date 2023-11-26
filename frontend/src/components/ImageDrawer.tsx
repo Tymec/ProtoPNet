@@ -40,7 +40,7 @@ export default function ImageDrawer({ images, overlay }: HeatmapProps) {
               <img
                 className={`rounded-lg object-contain shadow-md shadow-black
               ${hoverIndex === index ? 'z-10 scale-125 !blur-none' : ''}
-              ${hoverIndex !== index && hoverIndex !== -1 ? '!blur-sm' : ''}`}
+              ${hoverIndex !== index && hoverIndex !== -1 ? '!blur-sm' : ''} relative`}
                 src={`${import.meta.env.VITE_API_URL}/${image}`}
                 alt="Heatmap"
                 onMouseEnter={() => setHoverIndex(index)}
