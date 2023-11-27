@@ -90,7 +90,7 @@ async def get_prediction(
         boxmap_urls=None,
     )
 
-    s3t = get_transfer_manager(workers=40)
+    s3t = get_transfer_manager(workers=20)
 
     heatmap_urls: list[str] = []
     heatmaps = heatmap_by_top_k_prototype(act, pat, img, k)
