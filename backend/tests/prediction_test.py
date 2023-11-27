@@ -35,7 +35,7 @@ def test_invalid_image_type() -> None:
     assert json_response["detail"] == "Only JPEG OR PNG images are allowed."
 
 
-def test_invalid_k(mocker, image) -> None:
+def test_invalid_k(image) -> None:
     response = client.post(
         "/predict",
         files={"image": image},
@@ -51,8 +51,9 @@ def test_invalid_k(mocker, image) -> None:
 
 
 def test_predict(mocker, image) -> None:
-    # Don't save images
-    mocker.patch("PIL.Image.Image.save")
+    mocker.patch("app.main.get_transfer_manager")
+    mocker.patch("s3transfer.manager.TransferManager.upload")
+    mocker.patch("s3transfer.manager.TransferManager.shutdown")
 
     response = client.post(
         "/predict",
