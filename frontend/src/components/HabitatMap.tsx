@@ -14,11 +14,28 @@ interface HabitatMapProps {
   globe?: boolean;
 }
 
-function MapWrapper({ isGlobe, children }: { isGlobe: boolean; children: React.ReactNode }) {
+function MapWrapper({
+  isGlobe,
+  children,
+  width,
+  height,
+}: {
+  isGlobe: boolean;
+  children: React.ReactNode;
+  width: number;
+  height: number;
+}) {
   return isGlobe ? (
     <>{children}</>
   ) : (
-    <ZoomableGroup zoom={1} center={[0, 0]}>
+    <ZoomableGroup
+      zoom={1}
+      center={[0, 0]}
+      translateExtent={[
+        [-width / 2, -height / 2],
+        [2 * width, height],
+      ]}
+    >
       {children}
     </ZoomableGroup>
   );
@@ -66,7 +83,7 @@ export default function HabitatMap({
         height={mapHeight}
       >
         {graticule && <Graticule stroke="#999" clipPath="url(#rsm-sphere)" />}
-        <MapWrapper isGlobe={globe}>
+        <MapWrapper isGlobe={globe} width={mapWidth} height={mapHeight}>
           <Geographies geography={import.meta.env.VITE_HABITAT_GEO_URL}>
             {({ geographies }) =>
               geographies.map((geo) => {
