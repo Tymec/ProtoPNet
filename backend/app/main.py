@@ -128,6 +128,7 @@ async def get_prediction(
         boxmap_urls.append(url)
     return_data.boxmap_urls = boxmap_urls
 
+    # Uncomment to make thread wait for uploads to finish
     # s3t.shutdown()
 
     return return_data

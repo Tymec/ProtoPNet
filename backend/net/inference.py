@@ -5,10 +5,11 @@ from pathlib import Path
 import cv2
 import numpy as np
 import torch
+from PIL import Image
+
 from net import CLASSIFICATIONS, MEAN, PERCENTILE, STD
 from net.model import PPNet
 from net.vgg_features import VGG_features
-from PIL import Image
 
 DEVICE = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
