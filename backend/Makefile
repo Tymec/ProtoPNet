@@ -3,7 +3,7 @@
 default: dev
 
 install:
-	pipenv sync --dev
+	pipenv install --dev
 
 dev:
 	pipenv run uvicorn app.main:app --reload --port 5000
@@ -15,13 +15,13 @@ test:
 	pipenv run pytest
 
 coverage:
-	pipenv run pytest --cov=. --cov-report term --cov-report xml:docs/coverage.xml
+	pipenv run pytest --cov=. --cov-report term --cov-report xml:coverage.xml
 
 audit:
-	pipenv check --audit-and-monitor --save-json docs/audit.json
+	pipenv check --audit-and-monitor --save-json audit.json
 
 requirements:
-	pipenv requirements > requirements.txt
+	pipenv requirements > requirements-cpu.txt
 	pipenv requirements --dev-only > requirements-dev.txt
 
 black:
@@ -39,19 +39,10 @@ clean:
 	rm -rf .pytest_cache
 	rm -rf .mypy_cache
 	rm -rf .coverage
-	rm -rf docs/coverage.xml
-	rm -rf docs/audit.json
+	rm -rf coverage.xml
+	rm -rf audit.json
 
-docker-build:
-	docker build -t backend:latest .
-
-docker-run:
-	docker run --rm -p 5000:5000 backend:latest
-
-docker-clean:
-	docker rmi backend:latest
-
-.PHONY: default install dev prod test coverage audit requirements black isort flake8 lint clean docker-build docker-run docker-clean
+.PHONY: default install dev prod test coverage audit requirements black isort flake8 lint clean
 
 .EXPORT_ALL_VARIABLES:
 PIPENV_VERBOSITY = -1

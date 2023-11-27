@@ -1,4 +1,3 @@
-from enum import Enum
 from io import BytesIO
 from uuid import uuid4
 
@@ -6,6 +5,11 @@ from fastapi import FastAPI, File, Form, HTTPException, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
+from PIL import Image
+from pydantic import BaseModel
+
+from app import BOXMAP_URL, HEATMAP_URL, MODEL_INFO_PATH, MODEL_PATH, STATIC_DIR
+from app.s3 import get_transfer_manager, upload_image
 from net.inference import (
     box_by_top_k_prototype,
     get_classification,
@@ -14,29 +18,16 @@ from net.inference import (
     load_model,
     predict,
 )
-from PIL import Image
-from pydantic import BaseModel
-
-from app import BOX_DIR, CWD, FAVICON_PATH, HEATMAP_DIR, MODEL_INFO_PATH, MODEL_PATH, ROBOTS_PATH, STATIC_DIR
-
-
-class PredictReturnType(str, Enum):
-    NONE = "none"
-    BOTH = "both"
-    HEATMAPS = "heatmaps"
-    BOXES = "boxes"
 
 
 class PredictResponse(BaseModel):
     prediction: str
     confidence: dict[str, float]
     heatmap_urls: list[str] | None
-    box_urls: list[str] | None
+    boxmap_urls: list[str] | None
 
 
-# load model
 model = load_model(MODEL_PATH, MODEL_INFO_PATH)
-
 app = FastAPI()
 
 app.mount(
@@ -47,7 +38,11 @@ app.mount(
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173"],
+    allow_origins=[
+        "http://localhost:5173",
+        "http://127.0.0.1:5173",
+        "https://proto-p-net.vercel.app",
+    ],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -56,35 +51,23 @@ app.add_middleware(
 
 @app.get("/favicon.ico", include_in_schema=False)
 async def favicon():
-    return FileResponse(FAVICON_PATH)
+    return FileResponse(STATIC_DIR / "favicon.ico")
 
 
 @app.get("/robots.txt", include_in_schema=False)
 async def robots():
-    return FileResponse(ROBOTS_PATH)
-
-
-@app.get("/")
-async def root():
-    return {
-        "message": "Hello World",
-    }
+    return FileResponse(STATIC_DIR / "robots.txt")
 
 
 @app.post("/predict")
 async def get_prediction(
     image: UploadFile = File(...),
-    return_type: PredictReturnType = Form(
-        default=PredictReturnType.BOTH,
-        description="Type of items to return ['none/both'/'heatmaps'/'boxes']",
-    ),
     k: int = Form(
         default=10,
-        description="Number of items to return (of each: heatmap and box)",
+        description="Number of items to return (of each: heatmap and boxmap)",
         gt=0,
     ),
 ) -> PredictResponse:
-    # Check file type
     if image.content_type not in [
         "image/jpeg",
         "image/png",
@@ -104,37 +87,48 @@ async def get_prediction(
         prediction=get_classification(pred),
         confidence=confidence_map,
         heatmap_urls=None,
-        box_urls=None,
+        boxmap_urls=None,
     )
 
-    # Save heatmaps
-    if return_type == PredictReturnType.HEATMAPS or return_type == PredictReturnType.BOTH:
-        heatmaps = heatmap_by_top_k_prototype(act, pat, img, k)
+    s3t = get_transfer_manager(workers=20)
 
-        # make sure heatmap_dir exists
-        HEATMAP_DIR.mkdir(parents=True, exist_ok=True)
+    heatmap_urls: list[str] = []
+    heatmaps = heatmap_by_top_k_prototype(act, pat, img, k)
+    for heatmap in heatmaps:
+        url = upload_image(
+            s3t,
+            f"{HEATMAP_URL}/{uuid4()}.jpg",
+            heatmap,
+        )
 
-        heatmap_urls: list[str] = []
-        for heatmap in heatmaps:
-            heatmap_url = HEATMAP_DIR / f"{uuid4()}.jpg"
-            heatmap.save(heatmap_url)  # todo: use database to save img
-            relative_path = heatmap_url.relative_to(CWD)
-            heatmap_urls.append(str(relative_path))
-        return_data.heatmap_urls = heatmap_urls
+        if url is None:
+            raise HTTPException(
+                status_code=500,
+                detail="Could not upload heatmap to S3.",
+            )
 
-    # Save boxes
-    if return_type == PredictReturnType.BOXES or return_type == PredictReturnType.BOTH:
-        boxes = box_by_top_k_prototype(act, pat, img, k)
+        heatmap_urls.append(url)
+    return_data.heatmap_urls = heatmap_urls
 
-        # make sure box_dir exists
-        BOX_DIR.mkdir(parents=True, exist_ok=True)
+    boxmaps = box_by_top_k_prototype(act, pat, img, k)
+    boxmap_urls: list[str] = []
+    for boxmap in boxmaps:
+        url = upload_image(
+            s3t,
+            f"{BOXMAP_URL}/{uuid4()}.jpg",
+            boxmap,
+        )
 
-        box_urls: list[str] = []
-        for box in boxes:
-            box_url = BOX_DIR / f"{uuid4()}.jpg"
-            box.save(box_url)  # todo: use databse to save img
-            relative_path = box_url.relative_to(CWD)
-            box_urls.append(str(relative_path))
-        return_data.box_urls = box_urls
+        if url is None:
+            raise HTTPException(
+                status_code=500,
+                detail="Could not upload boxmap to S3.",
+            )
+
+        boxmap_urls.append(url)
+    return_data.boxmap_urls = boxmap_urls
+
+    # Uncomment to make thread wait for uploads to finish
+    # s3t.shutdown()
 
     return return_data
