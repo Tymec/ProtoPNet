@@ -57,4 +57,4 @@ RUN useradd --system --no-create-home appuser
 EXPOSE 5000
 USER appuser
 ENTRYPOINT ["./.venv/bin/python", "-m", "uvicorn"]
-CMD ["app.main:app", "--host", "0.0.0.0", "--port", "5000"]
+CMD ["app.main:app", "--proxy-headers", "--host", "0.0.0.0", "--port", "5000"]
