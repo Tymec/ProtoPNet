@@ -19,6 +19,7 @@ from net.inference import (
     predict,
 )
 
+
 class PredictResponse(BaseModel):
     prediction: str
     confidence: dict[str, float]
@@ -37,7 +38,7 @@ app.mount(
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"], # change before deployment
+    allow_origins=["*"],  # change before deployment
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -124,6 +125,6 @@ async def get_prediction(
     return_data.boxmap_urls = boxmap_urls
 
     # Uncomment to make thread wait for uploads to finish
-    # s3t.shutdown()
+    s3t.shutdown()
 
     return return_data
