@@ -1,6 +1,6 @@
-import { useState, useEffect } from "react";
-import { ChevronLeft, ChevronRight } from "react-feather";
-import { LoadingWheel } from ".";
+import { IconChevronLeft, IconChevronRight } from '@tabler/icons-react';
+import { useCallback, useEffect, useState } from 'react';
+import { LoadingWheel } from '.';
 
 interface PredictionsCarouselProps {
   confidenceData: { [key: string]: number };
@@ -20,29 +20,30 @@ export default function PredictionsCarousel({
   const birdsNames = Object.keys(confidenceData);
   const [curr, setCurr] = useState(0);
 
-  const prev = () =>
-    setCurr((curr) => (curr === 0 ? birdsNames.length - 1 : curr - 1));
-  const next = () =>
-    setCurr((curr) => (curr === birdsNames.length - 1 ? 0 : curr + 1));
+  const prev = () => setCurr((curr) => (curr === 0 ? birdsNames.length - 1 : curr - 1));
+  const next = useCallback(
+    () => setCurr((curr) => (curr === birdsNames.length - 1 ? 0 : curr + 1)),
+    [birdsNames.length]
+  );
 
   useEffect(() => {
     if (!autoSlide) return;
     const slideInterval = setInterval(next, autoSlideInterval);
     return () => clearInterval(slideInterval);
-  }, []);
+  }, [autoSlide, autoSlideInterval, next]);
 
   if (Object.keys(confidenceData).length === 0) {
     return (
       <div
         className={`flex flex-shrink flex-grow basis-1/5 flex-col rounded-lg bg-gray-200 p-4 dark:bg-gray-700 ${
-          loading ? "animate-pulse" : ""
+          loading ? 'animate-pulse' : ''
         } shadow-md shadow-black`}
       >
         {loading && <LoadingWheel absolute />}
         <h2
-          className="text-2xl font-semibold text-gray-800 shadow-white dark:text-gray-100 dark:shadow-black text-center"
+          className="text-center text-2xl font-semibold text-gray-800 shadow-white dark:text-gray-100 dark:shadow-black"
           style={{
-            textShadow: "0px 3px 2px var(--tw-shadow-color)",
+            textShadow: '0px 3px 2px var(--tw-shadow-color)',
           }}
         >
           Predictions
@@ -54,39 +55,39 @@ export default function PredictionsCarousel({
   return (
     <div
       className={`flex flex-shrink flex-grow basis-1/5 flex-col rounded-lg bg-gray-200 p-4 dark:bg-gray-700 ${
-        loading ? "animate-pulse" : ""
+        loading ? 'animate-pulse' : ''
       } shadow-md shadow-black`}
     >
       {loading && <LoadingWheel absolute />}
-      <div className="overflow-hidden relative">
+      <div className="relative overflow-hidden">
         {birdsNames.map((birdName) => (
-            <div
-              key={birdName}
-              style={{
-                display: curr === birdsNames.indexOf(birdName) ? "block" : "none",
-                textAlign: "center", 
-              }}
-              className="w-full"
-            >
+          <div
+            key={birdName}
+            style={{
+              display: curr === birdsNames.indexOf(birdName) ? 'block' : 'none',
+              textAlign: 'center',
+            }}
+            className="w-full"
+          >
             <div>
-              <div className="absolute bottom-20 right-0 left-0">
+              <div className="absolute bottom-20 left-0 right-0">
                 <div className="flex items-center justify-center gap-2">
                   {birdsNames.map((bird, j) => (
                     <div
                       key={bird}
                       className={`
-                        transition-all w-3 h-3 bg-white rounded-full
-                        ${curr === j ? "p-2" : "bg-opacity-50"}
+                        h-3 w-3 rounded-full bg-white transition-all
+                        ${curr === j ? 'p-2' : 'bg-opacity-50'}
                       `}
                     />
                   ))}
                 </div>
-                </div>
+              </div>
               <img
                 src={`https://placehold.co/500x500?text=<${birdName} image>`}
                 alt={birdName}
                 className="w-full"
-                style={{borderRadius: "10px"}}
+                style={{ borderRadius: '10px' }}
               />
             </div>
             <div className="absolute inset-0 flex items-center justify-between p-4">
@@ -96,9 +97,10 @@ export default function PredictionsCarousel({
                   onUpdateBird(updatedBirdName);
                   prev();
                 }}
-                className="p-1 rounded-full shadow bg-white/80 text-gray-800 hover:bg-white"
+                className="rounded-full bg-white/80 p-1 text-gray-800 shadow hover:bg-white"
               >
-                <ChevronLeft size={40} />
+                {/* <ChevronLeft size={40} /> */}
+                <IconChevronLeft size={40} />
               </button>
               <button
                 onClick={() => {
@@ -106,12 +108,13 @@ export default function PredictionsCarousel({
                   onUpdateBird(updatedBirdName);
                   next();
                 }}
-                className="p-1 rounded-full shadow bg-white/80 text-gray-800 hover:bg-white"
+                className="rounded-full bg-white/80 p-1 text-gray-800 shadow hover:bg-white"
               >
-                <ChevronRight size={40} />
+                {/* <ChevronRight size={40} /> */}
+                <IconChevronRight size={40} />
               </button>
             </div>
-          
+
             <div className="mt-2">
               <div className="mb-1 flex justify-between">
                 <span className="text-black-700 text-base font-medium dark:text-white">
@@ -119,7 +122,7 @@ export default function PredictionsCarousel({
                 </span>
                 <span className="text-black-700 text-sm font-medium dark:text-white">
                   {confidenceData[birdName] < 0.0001
-                    ? "<0.01"
+                    ? '<0.01'
                     : (confidenceData[birdName] * 100).toFixed(2)}
                   %
                 </span>
