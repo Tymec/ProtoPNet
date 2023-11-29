@@ -78,7 +78,6 @@ export default function App() {
   };
 
   const updateHabitatData = (bird: string) => {
-    console.log(bird);
     setHabitatData(bird in habitats ? habitats[bird as keyof typeof habitats] : []);
   };
 
@@ -86,7 +85,7 @@ export default function App() {
     <div className="min-h-screen bg-white p-8 dark:bg-slate-800">
       <div className="mx-auto flex w-3/4 flex-col gap-4">
         <div className="flex flex-row flex-wrap items-stretch justify-center gap-4">
-          <div className={`basis-1/7 flex-shrink flex-grow ${loading ? 'animate-pulse' : ''}`}>
+          <div className={`basis-1/3 flex-shrink flex-grow ${loading ? 'animate-pulse' : ''}`}>
             <ImageDropzone
               onUpload={(file: File) => {
                 setConfidenceData({});

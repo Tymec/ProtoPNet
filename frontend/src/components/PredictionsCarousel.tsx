@@ -54,7 +54,7 @@ export default function PredictionsCarousel({
 
   return (
     <div
-      className={`flex flex-shrink flex-grow basis-1/5 flex-col rounded-lg bg-gray-200 p-4 dark:bg-gray-700 ${
+      className={`flex flex-shrink flex-grow basis-1/3 flex-col rounded-lg bg-gray-200 p-4 dark:bg-gray-700 ${
         loading ? 'animate-pulse' : ''
       } shadow-md shadow-black`}
     >
@@ -97,7 +97,7 @@ export default function PredictionsCarousel({
                   onUpdateBird(updatedBirdName);
                   prev();
                 }}
-                className="rounded-full bg-white/80 p-1 text-gray-800 shadow hover:bg-white"
+                className=" rounded-full bg-white/80 p-1 text-gray-800 shadow hover:bg-white"
               >
                 <IconChevronLeft size={40} />
               </button>
@@ -113,28 +113,26 @@ export default function PredictionsCarousel({
                 <IconChevronRight size={40} />
               </button>
             </div>
-
             <div className="mt-2">
             <div className="mb-1 flex flex-col items-center md:flex-row md:justify-between">
-  <span className="text-black-700 text-base font-medium dark:text-white mb-2 md:mb-0">
-    {birdName}
-  </span>
-  <span className="text-black-700 text-sm font-medium dark:text-white">
-    {confidenceData[birdName] < 0.0001
-      ? '<0.01'
-      : (confidenceData[birdName] * 100).toFixed(2)}
-    %
-  </span>
-</div>
-
-              <div className="h-2.5 w-full rounded-full bg-gray-400 shadow-inner shadow-black dark:bg-gray-600">
-                <div
-                  className="h-2.5 animate-slider rounded-full bg-blue-500 shadow-sm shadow-black ease-in-out"
-                  style={{
-                    width: `${Math.round(confidenceData[birdName] * 100)}%`,
-                  }}
-                />
-              </div>
+              <span className=" text-black-700 text-base font-medium dark:text-white mb-2 md:mb-0">
+                {birdName}
+              </span>
+              <span className="text-black-700 text-sm font-medium dark:text-white">
+                {confidenceData[birdName] < 0.0001
+                  ? '<0.01'
+                  : (confidenceData[birdName] * 100).toFixed(2)}
+                %
+              </span>
+            </div>
+            <div className="h-2.5 w-full rounded-full bg-gray-400 shadow-inner shadow-black dark:bg-gray-600">
+              <div
+                className="h-2.5 animate-slider rounded-full bg-blue-500 shadow-sm shadow-black ease-in-out"
+                style={{
+                  width: `${Math.round(confidenceData[birdName] * 100)}%`,
+                }}
+              />
+            </div>
             </div>
           </div>
         ))}
