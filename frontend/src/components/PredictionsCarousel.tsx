@@ -54,7 +54,7 @@ export default function PredictionsCarousel({
 
   return (
     <div
-      className={`flex flex-shrink flex-grow basis-1/3 flex-col rounded-lg bg-gray-200 p-4 dark:bg-gray-700 ${
+      className={`flex flex-shrink basis-1/7 flex-grow-[2] flex-col rounded-lg bg-gray-200 p-4 dark:bg-gray-700 ${
         loading ? 'animate-pulse' : ''
       } shadow-md shadow-black`}
     >
@@ -76,7 +76,7 @@ export default function PredictionsCarousel({
                     <div
                       key={bird}
                       className={`
-                        h-3 w-3 rounded-full bg-white transition-all
+                        h-3 w-3 shadow-black shadow-sm rounded-full bg-white transition-all
                         ${curr === j ? 'p-2' : 'bg-opacity-50'}
                       `}
                     />
@@ -97,7 +97,7 @@ export default function PredictionsCarousel({
                   onUpdateBird(updatedBirdName);
                   prev();
                 }}
-                className=" rounded-full bg-white/80 p-1 text-gray-800 shadow hover:bg-white"
+                className=" shadow-black shadow-sm rounded-full bg-white/80 p-1 text-gray-800  hover:bg-white"
               >
                 <IconChevronLeft size={40} />
               </button>
@@ -107,7 +107,7 @@ export default function PredictionsCarousel({
                   onUpdateBird(updatedBirdName);
                   next();
                 }}
-                className="rounded-full bg-white/80 p-1 text-gray-800 shadow hover:bg-white"
+                className="shadow-black shadow-sm rounded-full bg-white/80 p-1 text-gray-800  hover:bg-white"
               >
 
                 <IconChevronRight size={40} />

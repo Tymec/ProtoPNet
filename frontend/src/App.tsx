@@ -85,7 +85,8 @@ export default function App() {
     <div className="min-h-screen bg-white p-8 dark:bg-slate-800">
       <div className="mx-auto flex w-3/4 flex-col gap-4">
         <div className="flex flex-row flex-wrap items-stretch justify-center gap-4">
-          <div className={`basis-1/3 flex-shrink flex-grow ${loading ? 'animate-pulse' : ''}`}>
+          <div className={`flex-shrink flex-grow-[1] ${loading ? 'animate-pulse' : ''}`}>
+            <div className='flex flex-col'>
             <ImageDropzone
               onUpload={(file: File) => {
                 setConfidenceData({});
@@ -96,15 +97,17 @@ export default function App() {
               }}
             />
             {loading && <LoadingWheel absolute />}
+            <div className="flex flex-auto flex-col items-center justify-center rounded-lg bg-gray-200 shadow-md shadow-black dark:bg-gray-700">
+            <HabitatMap countries={habitatData} globe={globeMap} />
+          </div>
+          </div>
           </div>
           <PredictionsCarousel
             confidenceData={confidenceData}
             loading={loading}
             onUpdateBird={updateHabitatData}
           />
-          <div className="flex flex-auto flex-col items-center justify-center rounded-lg bg-gray-200 shadow-md shadow-black dark:bg-gray-700">
-            <HabitatMap countries={habitatData} globe={globeMap} />
-          </div>
+        
         </div>
         <div className="flex w-full flex-row flex-wrap items-center justify-center gap-16 rounded-lg bg-gray-200 p-4 shadow-md shadow-black dark:bg-gray-700">
           <label htmlFor="k-option" className="text-gray-800 dark:text-gray-100">
@@ -138,7 +141,6 @@ export default function App() {
             isFileSelected={!!selectedFile}
           />
         </div>
-
         {heatmapImages && heatmapImages.length > 0 && (
           <ImageDrawer images={heatmapImages} overlay={boxmapImages} />
         )}
