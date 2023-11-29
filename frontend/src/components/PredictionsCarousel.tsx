@@ -86,7 +86,7 @@ export default function PredictionsCarousel({
               <img
                 src={`https://placehold.co/500x500?text=<${birdName} image>`}
                 alt={birdName}
-                className="w-full"
+                className="w-full max-w-full"
                 style={{ borderRadius: '10px' }}
               />
             </div>
@@ -99,7 +99,6 @@ export default function PredictionsCarousel({
                 }}
                 className="rounded-full bg-white/80 p-1 text-gray-800 shadow hover:bg-white"
               >
-                {/* <ChevronLeft size={40} /> */}
                 <IconChevronLeft size={40} />
               </button>
               <button
@@ -110,23 +109,24 @@ export default function PredictionsCarousel({
                 }}
                 className="rounded-full bg-white/80 p-1 text-gray-800 shadow hover:bg-white"
               >
-                {/* <ChevronRight size={40} /> */}
+
                 <IconChevronRight size={40} />
               </button>
             </div>
 
             <div className="mt-2">
-              <div className="mb-1 flex justify-between">
-                <span className="text-black-700 text-base font-medium dark:text-white">
-                  {birdName}
-                </span>
-                <span className="text-black-700 text-sm font-medium dark:text-white">
-                  {confidenceData[birdName] < 0.0001
-                    ? '<0.01'
-                    : (confidenceData[birdName] * 100).toFixed(2)}
-                  %
-                </span>
-              </div>
+            <div className="mb-1 flex flex-col items-center md:flex-row md:justify-between">
+  <span className="text-black-700 text-base font-medium dark:text-white mb-2 md:mb-0">
+    {birdName}
+  </span>
+  <span className="text-black-700 text-sm font-medium dark:text-white">
+    {confidenceData[birdName] < 0.0001
+      ? '<0.01'
+      : (confidenceData[birdName] * 100).toFixed(2)}
+    %
+  </span>
+</div>
+
               <div className="h-2.5 w-full rounded-full bg-gray-400 shadow-inner shadow-black dark:bg-gray-600">
                 <div
                   className="h-2.5 animate-slider rounded-full bg-blue-500 shadow-sm shadow-black ease-in-out"
