@@ -19,7 +19,6 @@ from net.inference import (
     predict,
 )
 
-
 class PredictResponse(BaseModel):
     prediction: str
     confidence: dict[str, float]
@@ -38,11 +37,7 @@ app.mount(
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        "http://localhost:5173",
-        "http://127.0.0.1:5173",
-        "https://proto-p-net.vercel.app",
-    ],
+    allow_origins=["*"], # change before deployment
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

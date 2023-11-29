@@ -1,12 +1,19 @@
 /// <reference types="vitest" />
+import { defineConfig } from 'vite';
 
 import react from '@vitejs/plugin-react';
-import { defineConfig } from 'vite';
+import path from 'path';
 
 // https://vitejs.dev/config/
 export default defineConfig({
   plugins: [react()],
   publicDir: 'public',
+  server: {
+    port: 3000,
+  },
+  build: {
+    manifest: true,
+  },
   test: {
     globals: true,
     environment: 'jsdom',
@@ -15,9 +22,12 @@ export default defineConfig({
     coverage: {
       provider: 'istanbul',
       reportsDirectory: './coverage',
+      reporter: ['text', 'json-summary', 'json'],
     },
   },
-  build: {
-    manifest: true,
+  resolve: {
+    alias: {
+      '@': path.resolve(__dirname, './src/'),
+    },
   },
 });

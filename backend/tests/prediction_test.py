@@ -49,7 +49,6 @@ def test_invalid_k(mocker, image) -> None:
     assert json_response["detail"][0]["type"] == "greater_than"
     assert json_response["detail"][0]["loc"] == ["body", "k"]
 
-
 def test_predict(mocker, image) -> None:
     # Don't save images
     mocker.patch("PIL.Image.Image.save")
@@ -62,6 +61,7 @@ def test_predict(mocker, image) -> None:
     assert response.status_code == 200
 
     json_response = response.json()
+    assert json_response["index"] == 85
     assert json_response["prediction"] == "Pacific Loon"
     assert len(json_response["confidence"]) == 5
     assert len(json_response["heatmap_urls"]) == 10
