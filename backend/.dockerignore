@@ -9,8 +9,9 @@
 !app/
 !net/
 
-# ... and the static files
-!static/
+# ... and static files
+!static/favicon.ico
+!static/robots.txt
 
 # ... and the model
 !model/

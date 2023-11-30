@@ -9,26 +9,26 @@ verify_ssl = true
 name = "downloadpytorch"
 
 [packages]
-fastapi = "0.104.1"
-numpy = "1.26.1"
-matplotlib = "3.8.1"
-pillow = "10.1.0"
-opencv-python-headless = "4.8.1.78"
-torch = {version = "2.1.1", index = "downloadpytorch"}
-torchvision = {version = "0.16.1", index = "downloadpytorch"}
-uvicorn = {version = "0.24.0.post1", extras = ["standard"]}
-python-multipart = "0.0.6"
-boto3 = "1.29.7"
+fastapi = "*"
+numpy = "*"
+matplotlib = "*"
+pillow = "*"
+opencv-python-headless = "*"
+torch = {version = "*", index = "downloadpytorch"}
+torchvision = {version = "*", index = "downloadpytorch"}
+uvicorn = {version = "*", extras = ["standard"]}
+python-multipart = "*"
+boto3 = "*"
 
 [dev-packages]
-black = "23.11.0"
-isort = "5.12.0"
-flake8 = "6.1.0"
-pytest = "7.4.3"
-pytest-cov = "4.1.0"
-httpx = "0.25.1"
-pytest-mock = "3.12.0"
-boto3-stubs = {version = "1.29.7", extras = ["ec2"]}
+black = "*"
+isort = "*"
+flake8 = "*"
+pytest = "*"
+pytest-cov = "*"
+httpx = "*"
+pytest-mock = "*"
+boto3-stubs = {version = "*", extras = ["ec2"]}
 
 [requires]
 python_version = "3.11"
