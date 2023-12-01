@@ -74,7 +74,11 @@ async def get_prediction(
         )
 
     contents = await image.read()
-    image_data = Image.open(BytesIO(contents))
+    image_data = ""
+    try:
+        image_data = Image.open(BytesIO(contents))
+    except:
+        raise HTTPException(400,"invalid file formatting")
 
     pred, con, act, pat, img = predict(model, image_data)
     confidence_map = get_confidence_map(con)
