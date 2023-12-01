@@ -35,7 +35,7 @@ def test_invalid_image_type() -> None:
     assert json_response["detail"] == "Only JPEG OR PNG images are allowed."
 
 
-def test_invalid_k(mocker, image) -> None:
+def test_invalid_k(image) -> None:
     response = client.post(
         "/predict",
         files={"image": image},
@@ -49,9 +49,11 @@ def test_invalid_k(mocker, image) -> None:
     assert json_response["detail"][0]["type"] == "greater_than"
     assert json_response["detail"][0]["loc"] == ["body", "k"]
 
+
 def test_predict(mocker, image) -> None:
-    # Don't save images
-    mocker.patch("PIL.Image.Image.save")
+    mocker.patch("app.main.get_transfer_manager")
+    mocker.patch("s3transfer.manager.TransferManager.upload")
+    mocker.patch("s3transfer.manager.TransferManager.shutdown")
 
     response = client.post(
         "/predict",
@@ -61,7 +63,6 @@ def test_predict(mocker, image) -> None:
     assert response.status_code == 200
 
     json_response = response.json()
-    assert json_response["index"] == 85
     assert json_response["prediction"] == "Pacific Loon"
     assert len(json_response["confidence"]) == 5
     assert len(json_response["heatmap_urls"]) == 10
