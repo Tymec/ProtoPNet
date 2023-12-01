@@ -10,6 +10,7 @@ dev:
 
 build:
 	pnpm build
+	pnpm preview
 
 test:
 	pnpm test

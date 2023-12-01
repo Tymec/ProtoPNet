@@ -1,102 +1,128 @@
-import { useState } from 'react';
-import './App.css';
-import ImageDropzone from './components/ImageDropzone';
-
-enum ReturnType {
-  BOTH = 'both',
-  HEATMAPS = 'heatmaps',
-  BOXES = 'boxes',
-}
+import {
+  HabitatMap,
+  IconToggle,
+  ImageDrawer,
+  ImageDropzone,
+  LoadingWheel,
+  PredictionsCarousel,
+} from '@/components';
+import { IconMap, IconMoon, IconSun, IconWorld } from '@tabler/icons-react';
+import { useContext, useEffect, useState } from 'react';
+import { ColorSchemeContext } from './contexts/ColorScheme';
 
 export default function App() {
-  const [optionK, setOptionK] = useState<number>(10);
-  const [optionReturnType, setOptionReturnType] = useState<ReturnType>(ReturnType.BOTH);
+  const { colorScheme, setColorScheme } = useContext(ColorSchemeContext);
 
-  const [prediction, setPrediction] = useState<string | undefined>(undefined);
+  const [loading, setLoading] = useState(false);
+
+  const [confidenceData, setConfidenceData] = useState<{ [key: string]: number }>({});
+  const [habitatData, setHabitatData] = useState<string[]>([]);
   const [heatmapImages, setHeatmapImages] = useState<string[]>([]);
-  const [boxImages, setBoxImages] = useState<string[]>([]);
+  const [boxmapImages, setBoxmapImages] = useState<string[]>([]);
 
-  function predict(file: File) {
-    const url =
-      `${import.meta.env.VITE_API_URL}/predict?` +
-      new URLSearchParams({
-        k: optionK.toString(),
-        return_type: optionReturnType,
-      });
-  
+  const [habitats, setHabitats] = useState<{ [key: string]: string[] }>({});
+  const [globeMap, setGlobeMap] = useState(false);
+
+  useEffect(() => {
+    fetch(import.meta.env.VITE_HABITAT_DATA_URL, {
+      method: 'GET',
+      headers: {
+        accept: 'application/json',
+      },
+    })
+      .then((res) => res.json())
+      .then((data) => setHabitats(data))
+      .catch((err) => console.error(err));
+  }, []);
+
+  const predict = (file: File) => {
+    setLoading(true);
+
+    const url = `${import.meta.env.VITE_API_URL}/predict`;
     const formData = new FormData();
+
     formData.append('image', file);
-  
+    formData.append('k', '10');
+
     fetch(url, {
       method: 'POST',
       body: formData,
+      headers: {
+        accept: 'application/json',
+      },
     })
       .then((res) => res.json())
       .then((data) => {
-        setPrediction(data.prediction);
+        setConfidenceData(data.confidence);
         setHeatmapImages(data.heatmap_urls);
-        setBoxImages(data.box_urls);
+        setBoxmapImages(data.boxmap_urls);
+
+        setHabitatData(
+          data.prediction in habitats ? habitats[data.prediction as keyof typeof habitats] : []
+        );
       })
       .catch((err) => {
         console.error(err);
-      });
-  }
- 
+      })
+      .finally(() => setLoading(false));
+  };
+
+  const updateHabitatData = (bird: string) => {
+    setHabitatData(bird in habitats ? habitats[bird as keyof typeof habitats] : []);
+  };
+
   return (
-    <div className="bg-gray-700 min-h-screen m-0 p-0">
-      <div>
-        <label htmlFor="k" className="text-gray-100">
-          K:
-          <input
-            id="k"
-            type="number"
-            min="1"
-            max="100"
-            value={optionK}
-            onChange={(e) => setOptionK(parseInt(e.target.value))}
-            className="ml-2 bg-gray-800 text-gray-100 rounded-lg p-2"
-          />
-        </label>
-        <label htmlFor="return_type" className="text-gray-100 ml-4">
-          Return type:
-          <select
-            id="return_type"
-            value={optionReturnType}
-            onChange={(e) => setOptionReturnType(e.target.value as ReturnType)}
-            className="ml-2 bg-gray-800 text-gray-100 rounded-lg p-2"
+    <div className="min-h-screen bg-white p-8 dark:bg-slate-800">
+      <div className="mx-auto flex w-4/5 flex-col gap-4">
+        <div className="flex flex-col justify-center gap-4 lg:flex-row lg:flex-wrap">
+          <div className="flex flex-col gap-4">
+            <div className="flex-1">
+              <ImageDropzone
+                onUpload={(file: File) => {
+                  setConfidenceData({});
+                  setHabitatData([]);
+                  setHeatmapImages([]);
+                  setBoxmapImages([]);
+                  predict(file);
+                }}
+              />
+            </div>
+            <div className="overflow-hidden rounded-lg bg-gray-200 shadow-md shadow-black dark:bg-gray-700">
+              <HabitatMap countries={habitatData} globe={globeMap} />
+            </div>
+          </div>
+
+          <div
+            className={`flex-[3] rounded-lg bg-gray-200 p-4 shadow-md shadow-black dark:bg-gray-700
+          ${loading ? 'animate-pulse cursor-wait' : 'cursor-default'}
+          `}
           >
-            <option value={ReturnType.BOTH}>Both</option>
-            <option value={ReturnType.HEATMAPS}>Heatmaps</option>
-            <option value={ReturnType.BOXES}>Boxes</option>
-          </select>
-        </label>
-      </div>
-      <ImageDropzone onUpload={predict} />
-      {prediction && (
-        <div className="flex flex-col items-center justify-center">
-          <h2 className="text-2xl font-semibold text-gray-100">Prediction</h2>
-          <p className="text-gray-400">{prediction}</p>
+            {loading && (
+              <div className="flex h-full w-full items-center justify-center">
+                <LoadingWheel />
+              </div>
+            )}
+            <PredictionsCarousel confidenceData={confidenceData} onUpdateBird={updateHabitatData} />
+          </div>
         </div>
-      )}
-      <div className="flex flex-row items-center justify-center flex-wrap gap-4 mb-4">
-        {heatmapImages.length > 0 && heatmapImages.map((image, index) => (
-          <img
-            key={index}
-            className="rounded-lg"
-            src={`${import.meta.env.VITE_API_URL}/${image}`}
-            alt="Heatmap"
+
+        <div className="flex w-full flex-row flex-wrap items-center justify-center gap-16 rounded-lg bg-gray-200 p-4 shadow-md shadow-black dark:bg-gray-700">
+          <IconToggle
+            IconOn={<IconWorld />}
+            IconOff={<IconMap />}
+            value={globeMap}
+            onChange={() => setGlobeMap((g) => !g)}
           />
-        ))}
-      </div>
-      <div className="flex flex-row items-center justify-center flex-wrap gap-4">
-        {boxImages.length > 0 && boxImages.map((image, index) => (
-          <img
-            key={index}
-            className="rounded-lg"
-            src={`${import.meta.env.VITE_API_URL}/${image}`}
-            alt="Box"
+          <IconToggle
+            IconOn={<IconMoon />}
+            IconOff={<IconSun />}
+            value={colorScheme === 'dark'}
+            onChange={() => setColorScheme(colorScheme === 'dark' ? 'light' : 'dark')}
           />
-        ))}
+        </div>
+        {heatmapImages && heatmapImages.length > 0 && (
+          <ImageDrawer images={heatmapImages} overlay={boxmapImages} />
+        )}
       </div>
     </div>
   );
