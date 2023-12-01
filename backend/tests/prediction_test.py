@@ -76,7 +76,7 @@ def test_image_wrong_format(mocker) -> None:
 
     response = client.post(
         "/predict",
-        files={"image": open("tests/resources/edgecases/wrongformat.jpg", "rb")},
+        files={"image": open("tests/resources/wrongformat.jpg", "rb")},
     )
     assert response.status_code == 400
 
@@ -89,7 +89,7 @@ def test_image_onepixel(mocker) -> None:
     response = client.post(
         "/predict",
         files={
-            "image": ("singlepixel.jpg", open("tests/resources/edgecases/singlepixel.jpg", "rb")),
+            "image": ("singlepixel.jpg", open("tests/resources/singlepixel.jpg", "rb")),
         },
     )
     assert response.status_code == 200
@@ -103,7 +103,7 @@ def test_image_transparent(mocker) -> None:
     response = client.post(
         "/predict",
         files={
-            "image": ("alpha.png", open("tests/resources/edgecases/alpha.png", "rb")),
+            "image": ("alpha.png", open("tests/resources/alpha.png", "rb")),
         },
     )
     assert response.status_code == 200
