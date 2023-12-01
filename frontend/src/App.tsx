@@ -5,7 +5,6 @@ import {
   ImageDropzone,
   LoadingWheel,
   PredictionsCarousel,
-  UploadButton,
 } from '@/components';
 import { IconMap, IconMoon, IconSun, IconWorld } from '@tabler/icons-react';
 import { useContext, useEffect, useState } from 'react';
@@ -14,8 +13,6 @@ import { ColorSchemeContext } from './contexts/ColorScheme';
 export default function App() {
   const { colorScheme, setColorScheme } = useContext(ColorSchemeContext);
 
-  const [optionK, setOptionK] = useState<number>(10);
-  const [selectedFile, setSelectedFile] = useState<File | undefined>(undefined);
   const [loading, setLoading] = useState(false);
 
   const [confidenceData, setConfidenceData] = useState<{ [key: string]: number }>({});
@@ -39,20 +36,13 @@ export default function App() {
   }, []);
 
   const predict = (file: File) => {
-    let k = optionK;
     setLoading(true);
-
-    if (isNaN(optionK) || optionK > 100) {
-      setOptionK(10);
-      k = 10;
-      alert('K set to default: 10');
-    }
 
     const url = `${import.meta.env.VITE_API_URL}/predict`;
     const formData = new FormData();
 
     formData.append('image', file);
-    formData.append('k', k.toString());
+    formData.append('k', '10');
 
     fetch(url, {
       method: 'POST',
@@ -83,47 +73,40 @@ export default function App() {
 
   return (
     <div className="min-h-screen bg-white p-8 dark:bg-slate-800">
-      <div className="mx-auto flex w-3/4 flex-col gap-4">
-        <div className="flex flex-row flex-wrap items-stretch justify-center gap-4">
-          <div className={`flex-shrink flex-grow-[1] ${loading ? 'animate-pulse' : ''}`}>
-            <div className='flex flex-col'>
-            <ImageDropzone
-              onUpload={(file: File) => {
-                setConfidenceData({});
-                setHabitatData([]);
-                setHeatmapImages([]);
-                setBoxmapImages([]);
-                setSelectedFile(file);
-              }}
-            />
-            {loading && <LoadingWheel absolute />}
-            <div className="flex flex-auto flex-col items-center justify-center rounded-lg bg-gray-200 shadow-md shadow-black dark:bg-gray-700">
-            <HabitatMap countries={habitatData} globe={globeMap} />
+      <div className="mx-auto flex w-4/5 flex-col gap-4">
+        <div className="flex flex-col justify-center gap-4 lg:flex-row lg:flex-wrap">
+          <div className="flex flex-col gap-4">
+            <div className="flex-1">
+              <ImageDropzone
+                onUpload={(file: File) => {
+                  setConfidenceData({});
+                  setHabitatData([]);
+                  setHeatmapImages([]);
+                  setBoxmapImages([]);
+                  predict(file);
+                }}
+              />
+            </div>
+            <div className="overflow-hidden rounded-lg bg-gray-200 shadow-md shadow-black dark:bg-gray-700">
+              <HabitatMap countries={habitatData} globe={globeMap} />
+            </div>
           </div>
-          </div>
-          </div>
-          <PredictionsCarousel
-            confidenceData={confidenceData}
-            loading={loading}
-            onUpdateBird={updateHabitatData}
-          />
-        
-        </div>
-        <div className="flex w-full flex-row flex-wrap items-center justify-center gap-16 rounded-lg bg-gray-200 p-4 shadow-md shadow-black dark:bg-gray-700">
-          <label htmlFor="k-option" className="text-gray-800 dark:text-gray-100">
-            K:
-            <input
-              id="k-option"
-              type="number"
-              min="1"
-              max="100"
-              placeholder="1-100"
-              value={optionK}
-              onChange={(e) => setOptionK(parseInt(e.target.value))}
-              className="ml-2 rounded-lg bg-gray-500 p-2 text-gray-200 shadow-inner shadow-black outline-none dark:bg-gray-800 dark:text-gray-100"
-            />
-          </label>
 
+          <div
+            className={`flex-[3] rounded-lg bg-gray-200 p-4 shadow-md shadow-black dark:bg-gray-700
+          ${loading ? 'animate-pulse cursor-wait' : 'cursor-default'}
+          `}
+          >
+            {loading && (
+              <div className="flex h-full w-full items-center justify-center">
+                <LoadingWheel />
+              </div>
+            )}
+            <PredictionsCarousel confidenceData={confidenceData} onUpdateBird={updateHabitatData} />
+          </div>
+        </div>
+
+        <div className="flex w-full flex-row flex-wrap items-center justify-center gap-16 rounded-lg bg-gray-200 p-4 shadow-md shadow-black dark:bg-gray-700">
           <IconToggle
             IconOn={<IconWorld />}
             IconOff={<IconMap />}
@@ -135,10 +118,6 @@ export default function App() {
             IconOff={<IconSun />}
             value={colorScheme === 'dark'}
             onChange={() => setColorScheme(colorScheme === 'dark' ? 'light' : 'dark')}
-          />
-          <UploadButton
-            onClick={() => selectedFile && predict(selectedFile)}
-            isFileSelected={!!selectedFile}
           />
         </div>
         {heatmapImages && heatmapImages.length > 0 && (

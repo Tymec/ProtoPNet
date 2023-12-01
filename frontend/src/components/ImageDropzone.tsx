@@ -26,28 +26,30 @@ export default function ImageDropzone({ onUpload }: ImageDropzoneProps) {
 
   return (
     <label
-      className="dark:hover:bg-bray-800 relative flex aspect-square cursor-pointer flex-col justify-center overflow-hidden rounded-lg border-2 border-dashed border-gray-300 bg-gray-200 shadow-md shadow-black hover:bg-gray-100 dark:border-gray-600 dark:bg-gray-700 dark:hover:border-gray-500 dark:hover:bg-gray-600"
+      className="flex aspect-square cursor-pointer flex-col justify-center overflow-hidden rounded-lg border-2 border-dashed border-gray-300 bg-gray-200 shadow-md shadow-black hover:bg-gray-100 dark:border-gray-600 dark:bg-gray-700 dark:hover:border-gray-500 dark:hover:bg-gray-800"
       onDragOver={(e) => e.preventDefault()}
       onDrop={(e) => {
         e.preventDefault();
         uploadFile(e.dataTransfer.files);
       }}
+      style={{
+        backgroundImage: preview ? `url(${preview})` : undefined,
+        backgroundSize: '100% 100%',
+        backgroundPosition: 'center',
+      }}
     >
       {preview ? (
-        <>
-          <img className="aspect-square object-fill" src={preview} alt="Preview" />
-          <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-50 opacity-0 transition-opacity duration-500 ease-in-out hover:opacity-100">
-            <span className="text-white">Upload new image</span>
-          </div>
-        </>
+        <div className="flex h-full w-full items-center justify-center bg-black bg-opacity-50 opacity-0 transition-opacity duration-500 ease-in-out hover:opacity-100">
+          <span className="text-white">Upload new image</span>
+        </div>
       ) : (
-        <div className="flex flex-col items-center">
-          <IconCloudUpload className="h-8 w-8 text-gray-500 dark:text-gray-400" />
-          <p className="mb-2 pl-4 pr-4 text-sm text-gray-500 dark:text-gray-400">
+        <>
+          <IconCloudUpload className="mx-auto h-8 w-8 text-gray-500 dark:text-gray-400" />
+          <p className="mx-auto mb-2 pl-4 pr-4 text-sm text-gray-500 dark:text-gray-400">
             <span className="font-semibold">Click to upload</span> or drag and drop
           </p>
-          <p className="text-xs text-gray-500 dark:text-gray-400">SVG, PNG or JPG</p>
-        </div>
+          <p className="mx-auto text-xs text-gray-500 dark:text-gray-400">SVG, PNG or JPG</p>
+        </>
       )}
       <input
         type="file"
