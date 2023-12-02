@@ -5,7 +5,7 @@ from fastapi import FastAPI, File, Form, HTTPException, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
-from PIL import Image
+from PIL import Image, UnidentifiedImageError
 from pydantic import BaseModel
 
 from app import BOXMAP_URL, HEATMAP_URL, MODEL_INFO_PATH, MODEL_PATH, STATIC_DIR
@@ -74,7 +74,14 @@ async def get_prediction(
         )
 
     contents = await image.read()
-    image_data = Image.open(BytesIO(contents))
+    image_data = ""
+    try:
+        image_data = Image.open(BytesIO(contents))
+    except UnidentifiedImageError:
+        raise HTTPException(
+            status_code=400,
+            detail="Invalid file format.",
+        )
 
     pred, con, act, pat, img = predict(model, image_data)
     confidence_map = get_confidence_map(con)
