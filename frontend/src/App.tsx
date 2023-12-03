@@ -1,6 +1,5 @@
 import {
   HabitatMap,
-  IconToggle,
   ImageDrawer,
   ImageDropzone,
   LoadingWheel,
@@ -73,27 +72,39 @@ export default function App() {
 
   return (
     <div className="min-h-screen bg-white p-8 dark:bg-slate-800">
-      <div className="mx-auto flex w-4/5 flex-col gap-4">
+      <div className="mx-auto flex w-3/4 flex-col gap-4">
         <div className="flex flex-col justify-center gap-4 lg:flex-row lg:flex-wrap">
           <div className="flex flex-col gap-4">
-            <div className="flex-1">
-              <ImageDropzone
-                onUpload={(file: File) => {
-                  setConfidenceData({});
-                  setHabitatData([]);
-                  setHeatmapImages([]);
-                  setBoxmapImages([]);
-                  predict(file);
-                }}
-              />
-            </div>
-            <div className="overflow-hidden rounded-lg bg-gray-200 shadow-md shadow-black dark:bg-gray-700">
+            <ImageDropzone
+              onUpload={(file: File) => {
+                setConfidenceData({});
+                setHabitatData([]);
+                setHeatmapImages([]);
+                setBoxmapImages([]);
+                predict(file);
+              }}
+            />
+            <div className="relative overflow-hidden rounded-lg bg-gray-200 shadow-md shadow-black dark:bg-gray-700">
+              <label className="absolute bottom-0 right-0 flex w-fit p-2 transition-opacity duration-500 ease-in-out hover:opacity-60">
+                <input
+                  type="checkbox"
+                  aria-labelledby="globe map toggle"
+                  className="peer absolute appearance-none"
+                  checked={globeMap}
+                  onChange={() => setGlobeMap((g) => !g)}
+                />
+                {globeMap ? (
+                  <IconWorld className="text-white" />
+                ) : (
+                  <IconMap className="text-black" />
+                )}
+              </label>
               <HabitatMap countries={habitatData} globe={globeMap} />
             </div>
           </div>
 
           <div
-            className={`flex-[3] rounded-lg bg-gray-200 p-4 shadow-md shadow-black dark:bg-gray-700
+            className={`min-h-[250px] flex-1 rounded-lg bg-gray-200 p-4 shadow-md shadow-black dark:bg-gray-700
           ${loading ? 'animate-pulse cursor-wait' : 'cursor-default'}
           `}
           >
@@ -105,24 +116,24 @@ export default function App() {
             <PredictionsCarousel confidenceData={confidenceData} onUpdateBird={updateHabitatData} />
           </div>
         </div>
+        <ImageDrawer images={heatmapImages} overlay={boxmapImages} uploaded={loading} />
+      </div>
 
-        <div className="flex w-full flex-row flex-wrap items-center justify-center gap-16 rounded-lg bg-gray-200 p-4 shadow-md shadow-black dark:bg-gray-700">
-          <IconToggle
-            IconOn={<IconWorld />}
-            IconOff={<IconMap />}
-            value={globeMap}
-            onChange={() => setGlobeMap((g) => !g)}
-          />
-          <IconToggle
-            IconOn={<IconMoon />}
-            IconOff={<IconSun />}
-            value={colorScheme === 'dark'}
+      <div className="fixed right-0 top-0 p-4">
+        <label className="relative mb-2 flex w-fit transition-opacity duration-500 ease-in-out hover:opacity-60">
+          <input
+            type="checkbox"
+            aria-labelledby="color scheme toggle"
+            className="peer absolute appearance-none"
+            checked={colorScheme === 'dark'}
             onChange={() => setColorScheme(colorScheme === 'dark' ? 'light' : 'dark')}
           />
-        </div>
-        {heatmapImages && heatmapImages.length > 0 && (
-          <ImageDrawer images={heatmapImages} overlay={boxmapImages} />
-        )}
+          {colorScheme === 'dark' ? (
+            <IconMoon className="text-white" />
+          ) : (
+            <IconSun className="text-black" />
+          )}
+        </label>
       </div>
     </div>
   );

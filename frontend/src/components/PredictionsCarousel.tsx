@@ -70,7 +70,7 @@ export default function PredictionsCarousel({
             </button>
           </div>
           <img
-            src={`https://placehold.co/450x450?text=<${birdName} image>`}
+            src={`${import.meta.env.VITE_BIRDS_URL}/${birdName.replace(/ /g, '+')}.jpg`}
             alt={birdName}
             className="mx-auto rounded-lg object-contain shadow-md shadow-black"
           />
