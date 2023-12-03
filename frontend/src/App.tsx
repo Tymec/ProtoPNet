@@ -41,7 +41,7 @@ export default function App() {
     const formData = new FormData();
 
     formData.append('image', file);
-    formData.append('k', '10');
+    formData.append('k', `${import.meta.env.VITE_API_K}`);
 
     fetch(url, {
       method: 'POST',
