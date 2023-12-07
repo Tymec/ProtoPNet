@@ -1,6 +1,6 @@
 # ProtoPNet
 
-Simple frontend for [ProtoPNet](https://github.com/cfchen-duke/ProtoPNet) to classify images uploaded by users.
+Website to predict bird species from user uploaded images using [ProtoPNet](https://github.com/cfchen-duke/ProtoPNet).
 
 ## Requirements
 - [Python 3.11](https://www.python.org/downloads/)
