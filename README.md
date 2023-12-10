@@ -13,7 +13,7 @@ Either visit the [demo](https://proto-p-net.vercel.app/) or follow the installat
 
 ## Requirements
 - [Python 3.11](https://www.python.org/downloads/)
-- [Node.js v19](https://nodejs.org/en/)
+- [Node.js 18](https://nodejs.org/en/)
 - [Make](https://www.gnu.org/software/make/)
 - [pipenv](https://pipenv.pypa.io/en/latest/)
 - [pnpm](https://pnpm.io/)
