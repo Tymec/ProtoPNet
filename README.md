@@ -1,6 +1,5 @@
 # ProtoPNet
 ProtoPNet is a website that allows users to upload images of birds and get predictions of their species using a deep learning model called [ProtoPNet](https://github.com/cfchen-duke/ProtoPNet).
-ProtoPNet is a novel approach to few-shot learning that leverages prototypes, or representative examples of each class, to make predictions.
 
 ![Demo](/assets/demo.gif)
 
