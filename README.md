@@ -27,6 +27,8 @@ Either visit the [demo](https://proto-p-net.vercel.app/) or follow the installat
 1. Modify `.env.example` and rename it to `.env`
 2. `make backend` to start the backend server
 
+Alternatively, use the [docker image](https://hub.docker.com/r/tymec/protopnet-api) or build your own as shown in the [docker compose](/backend/docker-compose.yml) file.
+
 ### Frontend
 1. `make frontend` to start the frontend server
 
