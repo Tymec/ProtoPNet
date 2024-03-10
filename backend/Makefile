@@ -24,16 +24,9 @@ requirements:
 	pipenv requirements > requirements-cpu.txt
 	pipenv requirements --dev-only > requirements-dev.txt
 
-black:
-	pipenv run black .
-
-isort:
-	pipenv run isort .
-
-flake8:
-	pipenv run flake8 app/ net/ tests/
-
-lint: isort black flake8
+lint:
+	ruff check .
+	ruff format .
 
 clean:
 	rm -rf .pytest_cache
@@ -42,7 +35,7 @@ clean:
 	rm -rf coverage.xml
 	rm -rf audit.json
 
-.PHONY: default install dev prod test coverage audit requirements black isort flake8 lint clean
+.PHONY: default install dev prod test coverage audit requirements lint clean
 
 .EXPORT_ALL_VARIABLES:
 PIPENV_VERBOSITY = -1

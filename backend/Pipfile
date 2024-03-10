@@ -21,9 +21,7 @@ python-multipart = "*"
 boto3 = "*"
 
 [dev-packages]
-black = "*"
-isort = "*"
-flake8 = "*"
+ruff = "*"
 pytest = "*"
 pytest-cov = "*"
 httpx = "*"

@@ -1,28 +1,11 @@
 {
-  // Python
-  "flake8.args": [
-    "--config=.flake8"
-  ],
-  "black-formatter.args": [
-    "--config",
-    "pyproject.toml"
-  ],
-  "isort.args": [
-    "--settings-file",
-    "pyproject.toml"
-  ],
-  // "mypy.args": [
-  //   "--config-file",
-  //   "mypy.ini"
-  // ],
-  "python.analysis.autoImportCompletions": true,
-  "python.analysis.inlayHints.pytestParameters": true,
-  "python.analysis.autoFormatStrings": true,
   "[python]": {
-    "editor.defaultFormatter": "ms-python.black-formatter",
+    "editor.formatOnSave": true,
     "editor.codeActionsOnSave": {
-      "source.organizeImports": true,
+      "source.fixAll": "explicit",
+      "source.organizeImports": "explicit"
     },
+    "editor.defaultFormatter": "charliermarsh.ruff"
   },
   // Editor
   "editor.formatOnSave": true,
@@ -32,6 +15,6 @@
     "**/__pycache__": true,
     "**/.mypy_cache": true,
     "**/.pytest_cache": true,
+    "**/.venv": true,
   },
-  "python.defaultInterpreterPath": "~/.local/share/virtualenvs/backend--xFucg3w/bin/python",
 }

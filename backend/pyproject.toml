@@ -1,34 +1,13 @@
-[tool.black]
+[tool.ruff]
 line-length = 120
-target-version = ["py310"]
+indent-width = 4
+target-version = "py311"
 
-[tool.isort]
-profile = "black"
-line_length = 120
-skip_gitignore = true
-multi_line_output = 3
-include_trailing_comma = true
-src_paths = ["app", "net", "tests"]
+[tool.ruff.lint]
+extend-select = ["I"]
 
-[tool.pyright]
-include = ["app", "tests"]
-#strict = ["app"]
-typeCheckingMode = "basic"
-deprecateTypingAliases = true
-# reportMissingImports = "warning"
-# reportUnknownParameterType = "warning"
-# reportMissingTypeStubs = "information"
-# reportUnknownMemberType = "information"
-
-[tool.mypy]
-ignore_missing_imports = false
-disallow_untyped_defs = true
-disallow_any_unimported = true
-warn_redundant_casts = true
-warn_unused_ignores = true
-warn_return_any = true
-show_error_codes = true
-exclude = ["tests", "net", "static", "model"]
+[tool.ruff.lint.per-file-ignores]
+"__init__.py" = ["E402"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

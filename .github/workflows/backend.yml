@@ -32,15 +32,9 @@ jobs:
           pip install -r requirements-cpu.txt
           pip install -r requirements-dev.txt
 
-      - name: Check formatting (isort & black)
-        run: |
-          python -m isort .
-          python -m black --check .
-
       - name: Lint
         run: |
-          python -m flake8 . --show-source --statistics
-          python -m flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
+          python -m ruff check .
 
       - name: Test and coverage
         run: |
