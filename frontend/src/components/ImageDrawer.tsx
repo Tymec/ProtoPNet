@@ -1,3 +1,4 @@
+import { IconFlag } from '@tabler/icons-react';
 import { useEffect, useState } from 'react';
 import { LoadingWheel } from '.';
 
@@ -5,11 +6,26 @@ interface HeatmapProps {
   images: string[];
   overlay: string[];
   uploaded: boolean;
+  sendFeedback: (selectedImages: number[]) => void;
 }
 
-export default function ImageDrawer({ images, overlay, uploaded }: HeatmapProps) {
+export default function ImageDrawer({ images, overlay, uploaded, sendFeedback }: HeatmapProps) {
   const [imagesLoaded, setImagesLoaded] = useState(false);
   const [hoverIndex, setHoverIndex] = useState(-1);
+  const [selectedImages, setSelectedImages] = useState<number[]>([]);
+
+  const selectImage = (index: number) => {
+    if (selectedImages.includes(index)) {
+      setSelectedImages(selectedImages.filter((i) => i !== index));
+    } else {
+      setSelectedImages([...selectedImages, index]);
+    }
+  };
+
+  const onFeedback = () => {
+    sendFeedback(selectedImages);
+    setSelectedImages([]);
+  };
 
   useEffect(() => {
     setImagesLoaded(false);
@@ -30,7 +46,21 @@ export default function ImageDrawer({ images, overlay, uploaded }: HeatmapProps)
   }, [images]);
 
   return (
-    <div className="flex min-h-[400px] flex-row flex-wrap items-center justify-center gap-4 rounded-lg bg-gray-200 p-4 shadow-md shadow-black dark:bg-gray-700">
+    <div
+      className={`relative flex min-h-[400px] flex-row flex-wrap items-center justify-center gap-4 rounded-lg bg-gray-200 p-4 shadow-md shadow-black dark:bg-gray-700 ${
+        uploaded ? 'animate-pulse cursor-wait' : 'cursor-default'
+      }`}
+    >
+      <label className="absolute right-0 top-0 flex w-fit p-2 transition-opacity duration-500 ease-in-out hover:opacity-60">
+        <input
+          type="checkbox"
+          aria-labelledby="globe map toggle"
+          className="peer absolute appearance-none"
+          onChange={() => onFeedback()}
+        />
+        <IconFlag className="text-red-600" />
+      </label>
+
       {!imagesLoaded && uploaded && (
         <div className="flex h-full w-full items-center justify-center">
           <LoadingWheel />
@@ -42,11 +72,17 @@ export default function ImageDrawer({ images, overlay, uploaded }: HeatmapProps)
             <img
               className={`rounded-lg object-contain shadow-md shadow-black
               ${hoverIndex === index ? 'z-10 scale-125 !blur-none' : ''}
-              ${hoverIndex !== index && hoverIndex !== -1 ? '!blur-sm' : ''} relative`}
+              ${hoverIndex !== index && hoverIndex !== -1 ? '!blur-sm' : ''} relative
+              ${
+                selectedImages.includes(index)
+                  ? 'border-2 border-red-500'
+                  : 'border-2 border-transparent'
+              }`}
               src={image}
               alt="Heatmap"
               onMouseEnter={() => setHoverIndex(index)}
               onMouseLeave={() => setHoverIndex(-1)}
+              onClick={() => selectImage(index)}
             />
             <img
               src={overlay[index]}

@@ -19,6 +19,7 @@ torchvision = {version = "*", index = "downloadpytorch"}
 uvicorn = {version = "*", extras = ["standard"]}
 python-multipart = "*"
 boto3 = "*"
+slowapi = "*"
 
 [dev-packages]
 ruff = "*"

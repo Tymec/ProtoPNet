@@ -1,14 +1,17 @@
 from io import BytesIO
 from uuid import uuid4
 
-from fastapi import FastAPI, File, Form, HTTPException, UploadFile
+from fastapi import FastAPI, File, Form, HTTPException, Request, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 from PIL import Image, UnidentifiedImageError
 from pydantic import BaseModel
+from slowapi.errors import RateLimitExceeded
+from slowapi import Limiter, _rate_limit_exceeded_handler
+from slowapi.util import get_remote_address
 
-from app import BOXMAP_URL, HEATMAP_URL, MODEL_INFO_PATH, MODEL_PATH, STATIC_DIR
+from app import BOXMAP_URL, HEATMAP_URL, MODEL_INFO_PATH, MODEL_PATH, STATIC_DIR, RATE_LIMIT
 from app.s3 import get_transfer_manager, upload_image
 from net.inference import (
     box_by_top_k_prototype,
@@ -32,7 +35,12 @@ class FeedbackResponse(BaseModel):
 
 
 model = load_model(MODEL_PATH, MODEL_INFO_PATH)
+
+limiter = Limiter(key_func=get_remote_address)
 app = FastAPI()
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
+
 
 app.mount(
     "/static",
@@ -60,7 +68,9 @@ async def robots():
 
 
 @app.post("/predict")
+@limiter.limit(RATE_LIMIT)
 async def get_prediction(
+    request: Request,
     image: UploadFile = File(...),
     k: int = Form(
         default=10,
@@ -141,7 +151,9 @@ async def get_prediction(
     return return_data
 
 @app.post("/feedback")
-async def get_prediction(
+@limiter.limit(RATE_LIMIT)
+async def get_feedback(
+    request: Request,
 ) -> FeedbackResponse:
     raise HTTPException(
         status_code=501,

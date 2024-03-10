@@ -5,13 +5,16 @@ import {
   LoadingWheel,
   PredictionsCarousel,
 } from '@/components';
-import { IconMap, IconMoon, IconSun, IconWorld } from '@tabler/icons-react';
+import { IconCheck, IconMap, IconMoon, IconSun, IconWorld } from '@tabler/icons-react';
 import { useContext, useEffect, useState } from 'react';
+import { ToastContainer, toast } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 import { ColorSchemeContext } from './contexts/ColorScheme';
 
 export default function App() {
   const { colorScheme, setColorScheme } = useContext(ColorSchemeContext);
 
+  const [lastFile, setLastFile] = useState<File | null>(null);
   const [loading, setLoading] = useState(false);
 
   const [confidenceData, setConfidenceData] = useState<{ [key: string]: number }>({});
@@ -34,6 +37,30 @@ export default function App() {
       .catch((err) => console.error(err));
   }, []);
 
+  const clearData = () => {
+    setConfidenceData({});
+    setHabitatData([]);
+    setHeatmapImages([]);
+    setBoxmapImages([]);
+  };
+
+  const notify = (msg: string | JSX.Element, role: 'info' | 'warning' | 'error' = 'info') => {
+    let send = toast.info;
+    if (role === 'warning') send = toast.warn;
+    if (role === 'error') send = toast.error;
+
+    send(msg, {
+      position: 'bottom-right',
+      autoClose: 5000,
+      hideProgressBar: true,
+      closeOnClick: true,
+      pauseOnHover: true,
+      draggable: true,
+      progress: undefined,
+      theme: 'dark',
+    });
+  };
+
   const predict = (file: File) => {
     setLoading(true);
 
@@ -52,6 +79,12 @@ export default function App() {
     })
       .then((res) => res.json())
       .then((data) => {
+        // too many requests
+        if (data.status == 429) {
+          notify('Too many requests, please try again later', 'warning');
+          return;
+        }
+
         setConfidenceData(data.confidence);
         setHeatmapImages(data.heatmap_urls);
         setBoxmapImages(data.boxmap_urls);
@@ -62,8 +95,68 @@ export default function App() {
       })
       .catch((err) => {
         console.error(err);
+        notify('Failed to predict', 'error');
       })
       .finally(() => setLoading(false));
+  };
+
+  const feedback = (selectedImages: number[]) => {
+    if (selectedImages.length === 0) {
+      notify('Please select at least one image', 'error');
+      return;
+    }
+
+    // show notification with confirmation button (confirm icon)
+    const content = (
+      <div className="flex flex-row items-end gap-4">
+        <p>Send feedback?</p>
+        <button
+          onClick={() => {
+            sendFeedback(selectedImages);
+            toast.dismiss();
+          }}
+          className="flex flex-row gap-1 rounded-md bg-green-400 p-0.5 hover:bg-green-600"
+        >
+          Confirm
+          <IconCheck />
+        </button>
+      </div>
+    );
+
+    notify(content, 'warning');
+  };
+
+  const sendFeedback = (selectedImages: number[]) => {
+    const url = `${import.meta.env.VITE_API_URL}/feedback`;
+    const formData = new FormData();
+
+    formData.append('selected_images', JSON.stringify(selectedImages));
+
+    fetch(url, {
+      method: 'POST',
+      body: formData,
+      headers: {
+        accept: 'application/json',
+      },
+    })
+      .then((res) => res.json())
+      .then((data) => {
+        // too many requests
+        if (data.status == 429) {
+          notify('Too many requests, please try again later', 'warning');
+          return;
+        }
+
+        // TODO: handle feedback response
+        notify('Feedback sent', 'info');
+
+        clearData();
+        if (lastFile) predict(lastFile);
+      })
+      .catch((err) => {
+        console.error(err);
+        notify('Failed to send feedback', 'error');
+      });
   };
 
   const updateHabitatData = (bird: string) => {
@@ -77,10 +170,8 @@ export default function App() {
           <div className="flex flex-col gap-4">
             <ImageDropzone
               onUpload={(file: File) => {
-                setConfidenceData({});
-                setHabitatData([]);
-                setHeatmapImages([]);
-                setBoxmapImages([]);
+                setLastFile(file);
+                clearData();
                 predict(file);
               }}
             />
@@ -116,7 +207,12 @@ export default function App() {
             <PredictionsCarousel confidenceData={confidenceData} onUpdateBird={updateHabitatData} />
           </div>
         </div>
-        <ImageDrawer images={heatmapImages} overlay={boxmapImages} uploaded={loading} />
+        <ImageDrawer
+          images={heatmapImages}
+          overlay={boxmapImages}
+          uploaded={loading}
+          sendFeedback={feedback}
+        />
       </div>
 
       <div className="fixed right-0 top-0 p-4">
@@ -135,6 +231,7 @@ export default function App() {
           )}
         </label>
       </div>
+      <ToastContainer />
     </div>
   );
 }

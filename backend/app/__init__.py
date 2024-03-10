@@ -16,3 +16,5 @@ S3_BUCKET = os.environ.get("S3_BUCKET", "")
 S3_ACCESS = os.environ.get("S3_ACCESS", "")
 S3_SECRET = os.environ.get("S3_SECRET", "")
 S3_REGION = os.environ.get("S3_REGION", "")
+
+RATE_LIMIT = "30/minute"
