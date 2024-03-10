@@ -27,6 +27,10 @@ class PredictResponse(BaseModel):
     boxmap_urls: list[str] | None
 
 
+class FeedbackResponse(BaseModel):
+    pass
+
+
 model = load_model(MODEL_PATH, MODEL_INFO_PATH)
 app = FastAPI()
 
@@ -135,3 +139,11 @@ async def get_prediction(
     s3t.shutdown()
 
     return return_data
+
+@app.post("/feedback")
+async def get_prediction(
+) -> FeedbackResponse:
+    raise HTTPException(
+        status_code=501,
+        detail="Not implemented yet.",
+    )
