@@ -16,6 +16,7 @@
   "dependencies": {
     "@tabler/icons-react": "^2.41.0",
     "@vercel/analytics": "^1.1.1",
+    "@vercel/speed-insights": "^1.0.10",
     "d3": "^7.8.5",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
