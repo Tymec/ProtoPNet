@@ -1,4 +1,5 @@
 import {
+  Footer,
   HabitatMap,
   ImageDrawer,
   ImageDropzone,
@@ -179,7 +180,7 @@ export default function App() {
               <label className="absolute bottom-0 right-0 flex w-fit p-2 transition-opacity duration-500 ease-in-out hover:opacity-60">
                 <input
                   type="checkbox"
-                  aria-labelledby="globe map toggle"
+                  aria-label="Toggle between globe and map view"
                   className="peer absolute appearance-none"
                   checked={globeMap}
                   onChange={() => setGlobeMap((g) => !g)}
@@ -213,13 +214,15 @@ export default function App() {
           uploaded={loading}
           sendFeedback={feedback}
         />
+
+        <Footer />
       </div>
 
       <div className="fixed right-0 top-0 p-4">
         <label className="relative mb-2 flex w-fit transition-opacity duration-500 ease-in-out hover:opacity-60">
           <input
             type="checkbox"
-            aria-labelledby="color scheme toggle"
+            aria-label="Toggle between light and dark mode"
             className="peer absolute appearance-none"
             checked={colorScheme === 'dark'}
             onChange={() => setColorScheme(colorScheme === 'dark' ? 'light' : 'dark')}

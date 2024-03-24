@@ -76,9 +76,7 @@ export default function PredictionsCarousel({
           />
 
           <div className="mt-2 flex flex-row justify-between">
-            <span className=" text-black-700 text-base font-medium dark:text-white">
-              {birdName}
-            </span>
+            <span className="text-black-700 text-base font-medium dark:text-white">{birdName}</span>
             <span className="text-black-700 text-sm font-medium dark:text-white">
               {confidenceData[birdName] < 0.0001
                 ? '<0.01'

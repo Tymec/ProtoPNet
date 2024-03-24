@@ -47,18 +47,25 @@ export default function ImageDrawer({ images, overlay, uploaded, sendFeedback }:
 
   return (
     <div
-      className={`relative flex min-h-[400px] flex-row flex-wrap items-center justify-center gap-4 rounded-lg bg-gray-200 p-4 shadow-md shadow-black dark:bg-gray-700 ${
+      className={`relative flex min-h-[400px] flex-row flex-wrap items-center justify-center gap-4 rounded-lg bg-gray-200 p-4 py-10 shadow-md shadow-black dark:bg-gray-700 ${
         uploaded ? 'animate-pulse cursor-wait' : 'cursor-default'
       }`}
     >
-      <label className="absolute right-0 top-0 flex w-fit p-2 transition-opacity duration-500 ease-in-out hover:opacity-60">
+      <label
+        className={`absolute right-0 top-0 flex w-fit p-2 transition-opacity duration-500 ease-in-out ${
+          selectedImages.length === 0 ? 'hover:opacity-100' : 'hover:opacity-60'
+        }`}
+      >
         <input
           type="checkbox"
-          aria-labelledby="globe map toggle"
+          aria-label="Flag selected images as incorrect"
           className="peer absolute appearance-none"
           onChange={() => onFeedback()}
+          disabled={selectedImages.length === 0}
         />
-        <IconFlag className="text-red-600" />
+        <IconFlag
+          className={`${selectedImages.length === 0 ? 'text-gray-400 opacity-50' : 'text-red-600'}`}
+        />
       </label>
 
       {!imagesLoaded && uploaded && (
