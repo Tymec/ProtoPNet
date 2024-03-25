@@ -1,6 +1,6 @@
 import { IconFlag } from '@tabler/icons-react';
 import { useEffect, useState } from 'react';
-import { LoadingWheel } from '.';
+import LoadingWheel from './LoadingWheel';
 
 interface HeatmapProps {
   images: string[];
