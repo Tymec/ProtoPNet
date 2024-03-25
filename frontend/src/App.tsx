@@ -1,15 +1,13 @@
-import {
-  Footer,
-  HabitatMap,
-  ImageDrawer,
-  ImageDropzone,
-  LoadingWheel,
-  PredictionsCarousel,
-} from '@/components';
+import Footer from '@/components/Footer';
 import { IconMap, IconMoon, IconSun, IconWorld } from '@tabler/icons-react';
 import { useContext, useEffect, useState } from 'react';
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
+import HabitatMap from './components/HabitatMap';
+import ImageDrawer from './components/ImageDrawer';
+import ImageDropzone from './components/ImageDropzone';
+import LoadingWheel from './components/LoadingWheel';
+import PredictionsCarousel from './components/PredictionsCarousel';
 import { ColorSchemeContext } from './contexts/ColorScheme';
 
 export default function App() {
