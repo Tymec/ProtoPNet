@@ -3,9 +3,6 @@ import { useEffect, useState } from 'react';
 import { ComposableMap, Geographies, Geography, Graticule, ZoomableGroup } from 'react-simple-maps';
 import { Tooltip } from 'react-tooltip';
 
-// TODO: Optimize map rendering
-// TODO: Hide tooltip when panning
-
 interface HabitatMapProps {
   countries: string[];
   mapWidth?: number;
