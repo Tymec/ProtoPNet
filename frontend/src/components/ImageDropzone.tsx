@@ -20,7 +20,7 @@ export default function ImageDropzone({ onUpload }: ImageDropzoneProps) {
       setPreview(fileUrl);
       onUpload(file);
     } else {
-      alert('Please select a valid image file (PNG, JPG, JPEG).');
+      alert('Please select a valid image file (PNG, JPG or JPEG)');
     }
   };
 
@@ -48,7 +48,7 @@ export default function ImageDropzone({ onUpload }: ImageDropzoneProps) {
           <p className="mx-auto mb-2 pl-4 pr-4 text-sm text-gray-500 dark:text-gray-400">
             <span className="font-semibold">Click to upload</span> or drag and drop
           </p>
-          <p className="mx-auto text-xs text-gray-500 dark:text-gray-400">SVG, PNG or JPG</p>
+          <p className="mx-auto text-xs text-gray-500 dark:text-gray-400">PNG, JPG or JPEG</p>
         </>
       )}
       <input
