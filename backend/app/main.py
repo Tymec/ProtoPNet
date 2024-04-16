@@ -7,11 +7,11 @@ from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 from PIL import Image, UnidentifiedImageError
 from pydantic import BaseModel
-from slowapi.errors import RateLimitExceeded
 from slowapi import Limiter, _rate_limit_exceeded_handler
+from slowapi.errors import RateLimitExceeded
 from slowapi.util import get_remote_address
 
-from app import BOXMAP_URL, HEATMAP_URL, MODEL_INFO_PATH, MODEL_PATH, STATIC_DIR, RATE_LIMIT
+from app import BOXMAP_URL, HEATMAP_URL, MODEL_INFO_PATH, MODEL_PATH, RATE_LIMIT, STATIC_DIR
 from app.s3 import get_transfer_manager, upload_image
 from net.inference import (
     box_by_top_k_prototype,
@@ -149,6 +149,7 @@ async def get_prediction(
     s3t.shutdown()
 
     return return_data
+
 
 @app.post("/feedback")
 @limiter.limit(RATE_LIMIT)
