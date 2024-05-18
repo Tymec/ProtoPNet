@@ -1,6 +1,7 @@
 from io import BytesIO
 from uuid import uuid4
 
+import json
 from fastapi import FastAPI, File, Form, HTTPException, Request, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
@@ -10,8 +11,9 @@ from pydantic import BaseModel
 from slowapi import Limiter, _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
 from slowapi.util import get_remote_address
+from typing import List
 
-from app import BOXMAP_URL, HEATMAP_URL, MODEL_INFO_PATH, MODEL_PATH, RATE_LIMIT, STATIC_DIR
+from app import BOXMAP_URL, HEATMAP_URL, MODEL_INFO_PATH, MODEL_PATH, RATE_LIMIT, STATIC_DIR, ORIGINAL_URL
 from app.s3 import get_transfer_manager, upload_image
 from net.inference import (
     box_by_top_k_prototype,
@@ -21,6 +23,8 @@ from net.inference import (
     load_model,
     predict,
 )
+from app.firebase import FirebaseManager
+
 
 
 class PredictResponse(BaseModel):
@@ -28,13 +32,18 @@ class PredictResponse(BaseModel):
     confidence: dict[str, float]
     heatmap_urls: list[str] | None
     boxmap_urls: list[str] | None
+    document_id: str | None
 
+
+class FeedbackData(BaseModel):
+    selected_images: List[str]
+    document_id: str
 
 class FeedbackResponse(BaseModel):
     pass
 
-
 model = load_model(MODEL_PATH, MODEL_INFO_PATH)
+firebase = FirebaseManager()
 
 limiter = Limiter(key_func=get_remote_address)
 app = FastAPI()
@@ -96,6 +105,13 @@ async def get_prediction(
             status_code=400,
             detail="Invalid file format.",
         )
+    
+    s3t = get_transfer_manager(workers=20)
+    original_image_url = upload_image(
+        s3t,
+        f"{ORIGINAL_URL}/{uuid4()}.jpg",
+        image_data.convert("RGB"),
+    )
 
     pred, con, act, pat, img = predict(model, image_data)
     confidence_map = get_confidence_map(con)
@@ -105,9 +121,8 @@ async def get_prediction(
         confidence=confidence_map,
         heatmap_urls=None,
         boxmap_urls=None,
+        document_id=None,
     )
-
-    s3t = get_transfer_manager(workers=20)
 
     heatmap_urls: list[str] = []
     heatmaps = heatmap_by_top_k_prototype(act, pat, img, k)
@@ -145,6 +160,8 @@ async def get_prediction(
         boxmap_urls.append(url)
     return_data.boxmap_urls = boxmap_urls
 
+    return_data.document_id = firebase.add_document(original_image_url, return_data.prediction, heatmap_urls, boxmap_urls)
+
     # Uncomment to make thread wait for uploads to finish
     s3t.shutdown()
 
@@ -152,11 +169,21 @@ async def get_prediction(
 
 
 @app.post("/feedback")
-@limiter.limit(RATE_LIMIT)
 async def get_feedback(
-    request: Request,
+    selected_images: str = Form(
+        default="[]",
+        description="List of indices of images to be flagged",
+    ),
+    document_id: str = Form(
+        ...,
+        description="Document ID of the prediction",
+    ),
 ) -> FeedbackResponse:
-    raise HTTPException(
-        status_code=501,
-        detail="Not implemented yet.",
-    )
+    if document_id is None:
+        raise HTTPException(
+            status_code=400,
+            detail="Document ID is required.",
+        )
+    selected_images = json.loads(selected_images)
+    firebase.update_flagged(document_id, selected_images)
+    return FeedbackResponse()

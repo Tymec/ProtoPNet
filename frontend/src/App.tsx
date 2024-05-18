@@ -17,6 +17,7 @@ export default function App() {
   const [loading, setLoading] = useState(false);
 
   const [confidenceData, setConfidenceData] = useState<{ [key: string]: number }>({});
+  const [documentId, setDocumentId] = useState<string>('');
   const [habitatData, setHabitatData] = useState<string[]>([]);
   const [heatmapImages, setHeatmapImages] = useState<string[]>([]);
   const [boxmapImages, setBoxmapImages] = useState<string[]>([]);
@@ -87,6 +88,7 @@ export default function App() {
         setConfidenceData(data.confidence);
         setHeatmapImages(data.heatmap_urls);
         setBoxmapImages(data.boxmap_urls);
+        setDocumentId(data.document_id);
 
         setHabitatData(
           data.prediction in habitats ? habitats[data.prediction as keyof typeof habitats] : []
@@ -103,7 +105,7 @@ export default function App() {
     if (selectedImages.length === 0) {
       notify('Please select at least one image', 'error');
       return;
-    }
+    } 
 
     // show notification with confirmation button (confirm icon)
     const content = (
@@ -130,6 +132,7 @@ export default function App() {
     const formData = new FormData();
 
     formData.append('selected_images', JSON.stringify(selectedImages));
+    formData.append('document_id', documentId);
 
     fetch(url, {
       method: 'POST',
@@ -149,8 +152,8 @@ export default function App() {
         // TODO: handle feedback response
         notify('Feedback sent', 'info');
 
-        clearData();
-        if (lastFile) predict(lastFile);
+        // clearData();
+        // if (lastFile) predict(lastFile);
       })
       .catch((err) => {
         console.error(err);
