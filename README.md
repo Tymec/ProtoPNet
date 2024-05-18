@@ -9,7 +9,7 @@ ProtoPNet is a website that allows users to upload images of birds and get predi
 - See to what countries the bird is native to on a map (either a globe or a flat map)
 
 ## How to use
-Either visit the [demo](https://proto-p-net.vercel.app/) or follow the installation instructions below to run the website locally.
+Either visit the [demo](https://protopnet.vercel.app/) or follow the installation instructions below to run the website locally.
 
 ## Requirements
 - [Python 3.11](https://www.python.org/downloads/)
