@@ -1,17 +1,10 @@
-version: '3.8'
-
 services:
   api:
-    container_name: protopnet-api
     restart: unless-stopped
     build:
       context: .
       dockerfile: Dockerfile
-    env_file: .env # S3_BUCKET, S3_ACCESS, S3_SECRET, S3_REGION
+    env_file: .env
     network_mode: bridge
     ports:
       - "5000:5000"
-    environment:
-      PUID: 1000
-      PGID: 1000
-      TZ: Europe/Warsaw

@@ -2,8 +2,8 @@
 **
 
 # ... except for dependencies
-!Pipfile
-!Pipfile.lock
+!pyproject.toml
+!poetry.lock
 
 # ... and the modules
 !app/

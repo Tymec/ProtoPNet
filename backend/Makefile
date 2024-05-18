@@ -3,39 +3,43 @@
 default: dev
 
 install:
-	pipenv install --dev
+	poetry self add poetry-plugin-dotenv poetry-plugin-export
+	poetry config warnings.export false
+	poetry install
 
 dev:
-	pipenv run uvicorn app.main:app --reload --port 5000
+	poetry run uvicorn app.main:app --reload --port 5000
 
 prod:
-	pipenv run uvicorn app.main:app --host 0.0.0.0 --port 5000
+	poetry run uvicorn app.main:app --host 0.0.0.0 --port 5000
 
 test:
-	pipenv run pytest
+	poetry run pytest
 
 coverage:
-	pipenv run pytest --cov=. --cov-report term --cov-report xml:coverage.xml
-
-audit:
-	pipenv check --audit-and-monitor --save-json audit.json
+	poetry run pytest --cov=. --cov-report term --cov-report xml:coverage.xml
 
 requirements:
-	pipenv requirements > requirements-cpu.txt
-	pipenv requirements --dev-only > requirements-dev.txt
+	poetry lock
+	poetry export -f requirements.txt --output requirements-cpu.txt --without dev
+	poetry export -f requirements.txt --output requirements-dev.txt --only dev
+
+lint-check:
+	poetry run ruff check .
+	poetry run ruff format .
 
 lint:
-	ruff check .
-	ruff format .
+	poetry run ruff check --fix .
+	poetry run ruff format .
 
 clean:
+	rm -rf .ruff_cache
 	rm -rf .pytest_cache
 	rm -rf .mypy_cache
 	rm -rf .coverage
 	rm -rf coverage.xml
-	rm -rf audit.json
 
-.PHONY: default install dev prod test coverage audit requirements lint clean
+.PHONY: default install dev prod test coverage requirements lint clean
 
 .EXPORT_ALL_VARIABLES:
-PIPENV_VERBOSITY = -1
+POETRY_VIRTUALENVS_IN_PROJECT = true
