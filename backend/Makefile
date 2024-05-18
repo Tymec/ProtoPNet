@@ -20,11 +20,16 @@ coverage:
 	poetry run pytest --cov=. --cov-report term --cov-report xml:coverage.xml
 
 requirements:
+	poetry lock
 	poetry export -f requirements.txt --output requirements-cpu.txt --without dev
 	poetry export -f requirements.txt --output requirements-dev.txt --only dev
 
-lint:
+lint-check:
 	poetry run ruff check .
+	poetry run ruff format .
+
+lint:
+	poetry run ruff check --fix .
 	poetry run ruff format .
 
 clean:
