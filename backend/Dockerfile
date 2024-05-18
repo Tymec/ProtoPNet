@@ -1,60 +1,60 @@
-FROM python:3.11-slim as builder
+FROM python:3.12-slim AS builder
 
-# Setup environment
-ENV LANG C.UTF-8
-ENV LC_ALL C.UTF-8
-ENV PYTHONDONTWRITEBYTECODE 1
-ENV PYTHONFAULTHANDLER 1
+# Set environment variables
+ENV POETRY_VERSION="1.8.2"
+ENV POETRY_HOME="/opt/poetry"
+ENV POETRY_CACHE_DIR="/cache/poetry"
+ENV POETRY_VIRTUALENVS_IN_PROJECT=true
 
-# Tell pipenv to create venv in the current directory
-ENV PIPENV_VENV_IN_PROJECT=1
+# Create cache directory
+RUN mkdir -p /cache/poetry
 
 # Install dependencies
-RUN apt-get update && apt-get install -y --no-install-recommends gcc
+# RUN apt-get update && apt-get install -y --no-install-recommends gcc
 
-# Install pipenv
-RUN pip install pipenv
+# Install Poetry
+RUN pip install poetry==${POETRY_VERSION}
 
-# Copy Pipfile and Pipfile.lock
-RUN mkdir -v -p /build
-ADD Pipfile Pipfile.lock /build/
-
-# Set working directory
+# Set the working directory
 WORKDIR /build
 
-# Install packages specified in Pipfile.lock
-RUN --mount=type=cache,target=/root/.cache pipenv install --deploy
+# Copy the project files
+ADD pyproject.toml poetry.lock ./
 
-FROM python:3.11-slim as runner
+# Validate the project
+RUN poetry check
+
+# Install project dependencies
+RUN --mount=type=cache,target=/cache/poetry poetry install --only main --no-root
+
+# Second stage
+FROM python:3.12-slim as runner
 
 # Set correct locale
 ENV LANG C.UTF-8
 ENV LC_ALL C.UTF-8
-
 # This prevents Python from writing out pyc files
 ENV PYTHONDONTWRITEBYTECODE 1
-
 # This prevents Python from buffering stdout and stderr
 ENV PYTHONUNBUFFERED 1
-
 # Enable Python tracebacks on segfaults
 ENV PYTHONFAULTHANDLER 1
 
-# Copy venv from builder
-RUN mkdir -v -p /app
-COPY --from=builder /build/.venv/ /app/.venv
+# Copy virtual environment
+COPY --from=builder /build/.venv /app/.venv
 
-# Copy source code
+# Copy project files
 COPY . /app
 
 # Set working directory
 WORKDIR /app
 
-# Create user
-RUN useradd --system --no-create-home appuser
+# Create a non-root user
+RUN addgroup --system --gid 1001 appuser
+RUN adduser --system --uid 1001 appuser
+USER appuser
 
 # Finalize
 EXPOSE 5000
-USER appuser
 ENTRYPOINT ["./.venv/bin/python", "-m", "uvicorn"]
 CMD ["app.main:app", "--proxy-headers", "--host", "0.0.0.0", "--port", "5000"]

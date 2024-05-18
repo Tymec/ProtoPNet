@@ -1,8 +1,5 @@
-version: '3.8'
-
 services:
   api:
-    container_name: protopnet-api
     restart: unless-stopped
     build:
       context: .
@@ -11,7 +8,3 @@ services:
     network_mode: bridge
     ports:
       - "5000:5000"
-    environment:
-      PUID: 1000
-      PGID: 1000
-      TZ: Europe/Warsaw
