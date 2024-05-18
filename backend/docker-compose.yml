@@ -4,7 +4,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-    env_file: .env # S3_BUCKET, S3_ACCESS, S3_SECRET, S3_REGION
+    env_file: .env
     network_mode: bridge
     ports:
       - "5000:5000"
