@@ -86,6 +86,10 @@ async def get_prediction(
         description="Number of items to return (of each: heatmap and boxmap)",
         gt=0,
     ),
+    user_id: str = Form(
+        default="",
+        description="User ID",
+    ),
 ) -> PredictResponse:
     if image.content_type not in [
         "image/jpeg",
@@ -160,7 +164,7 @@ async def get_prediction(
         boxmap_urls.append(url)
     return_data.boxmap_urls = boxmap_urls
 
-    return_data.document_id = firebase.add_document(original_image_url, return_data.prediction, heatmap_urls, boxmap_urls)
+    return_data.document_id = firebase.add_document(original_image_url, return_data.prediction, heatmap_urls, boxmap_urls, user_id)
 
     # Uncomment to make thread wait for uploads to finish
     s3t.shutdown()
