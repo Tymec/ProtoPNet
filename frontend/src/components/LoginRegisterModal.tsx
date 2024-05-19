@@ -1,8 +1,9 @@
+import useOutsideClick from '@/hooks/OnOutsideClick';
+import { notify } from '@/utils';
 import { IconX } from '@tabler/icons-react';
 import { FirebaseError } from 'firebase/app';
 import { createUserWithEmailAndPassword, getAuth, signInWithEmailAndPassword } from 'firebase/auth';
-import { useState } from 'react';
-import { toast } from 'react-toastify';
+import { useRef, useState } from 'react';
 
 const LoginRegisterModal = ({ onClose }: { onClose: () => void }) => {
   const [isLogin, setIsLogin] = useState(true);
@@ -10,14 +11,15 @@ const LoginRegisterModal = ({ onClose }: { onClose: () => void }) => {
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [loading, setLoading] = useState(false);
+  const modalRef = useRef<HTMLDivElement>(null);
+
+  useOutsideClick(modalRef, onClose);
 
   const auth = getAuth();
 
   const handleAuth = async () => {
     if (!isLogin && password !== confirmPassword) {
-      toast.error('Passwords do not match', {
-        position: 'bottom-right',
-      });
+      notify('Passwords do not match', 'error');
       return;
     }
 
@@ -25,44 +27,28 @@ const LoginRegisterModal = ({ onClose }: { onClose: () => void }) => {
     try {
       if (isLogin) {
         await signInWithEmailAndPassword(auth, email, password);
-        toast.success('Login successful', {
-          position: 'bottom-right',
-        });
+        notify('Login successful');
       } else {
         await createUserWithEmailAndPassword(auth, email, password);
-        toast.success('Registration successful', {
-          position: 'bottom-right',
-        });
+        notify('Registration successful');
       }
       onClose();
     } catch (error) {
-      console.error('Authentication error', error);
-      if (error instanceof FirebaseError && error.code) {
-        switch (error.code) {
-          case 'auth/email-already-in-use':
-            toast.error('Email is already in use', {
-              position: 'bottom-right',
-            });
-            break;
-          case 'auth/invalid-email':
-            toast.error('Invalid email address', {
-              position: 'bottom-right',
-            });
-            break;
-          case 'auth/weak-password':
-            toast.error('Password is too weak', {
-              position: 'bottom-right',
-            });
-            break;
-          default:
-            toast.error('Authentication failed', {
-              position: 'bottom-right',
-            });
-        }
-      } else {
-        toast.error('Authentication failed', {
-          position: 'bottom-right',
-        });
+      const errorCode = error instanceof FirebaseError ? error.code : '';
+      switch (errorCode) {
+        case 'auth/email-already-in-use':
+          notify('Email is already in use', 'error');
+          break;
+        case 'auth/invalid-email':
+          notify('Invalid email address', 'error');
+          break;
+        case 'auth/weak-password':
+          notify('Password is too weak', 'error');
+          break;
+        default:
+          notify('Authentication failed', 'error');
+
+          console.error('Authentication error', error);
       }
     } finally {
       setLoading(false);
@@ -71,7 +57,10 @@ const LoginRegisterModal = ({ onClose }: { onClose: () => void }) => {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
-      <div className="relative w-80 rounded-lg bg-white p-6 shadow-lg dark:bg-slate-700">
+      <div
+        ref={modalRef}
+        className="relative w-80 rounded-lg bg-white p-6 shadow-lg dark:bg-slate-700"
+      >
         <button onClick={onClose} className="absolute right-2 top-2 dark:text-white">
           <IconX />
         </button>

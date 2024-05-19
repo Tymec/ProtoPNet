@@ -1,3 +1,4 @@
+import { notify } from '@/utils';
 import { IconCloudUpload } from '@tabler/icons-react';
 import { useState } from 'react';
 
@@ -20,7 +21,8 @@ export default function ImageDropzone({ onUpload }: ImageDropzoneProps) {
       setPreview(fileUrl);
       onUpload(file);
     } else {
-      alert('Please select a valid image file (PNG, JPG or JPEG)');
+      // alert('Please select a valid image file (PNG, JPG or JPEG)');
+      notify('Please select a valid image file (PNG, JPG or JPEG)', 'error');
     }
   };
 

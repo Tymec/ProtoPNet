@@ -1,11 +1,11 @@
+import 'react-toastify/dist/ReactToastify.css';
+
 import Footer from '@/components/Footer';
-import { IconCheck, IconMap, IconMoon, IconSun, IconWorld } from '@tabler/icons-react';
+import { IconCheck, IconLogin2, IconMap, IconMoon, IconSun, IconWorld } from '@tabler/icons-react';
 import { initializeApp } from 'firebase/app';
-import 'firebase/auth';
 import { User, getAuth, onAuthStateChanged, signOut } from 'firebase/auth';
 import { useContext, useEffect, useState } from 'react';
 import { ToastContainer, toast } from 'react-toastify';
-import 'react-toastify/dist/ReactToastify.css';
 import HabitatMap from './components/HabitatMap';
 import ImageDrawer from './components/ImageDrawer';
 import ImageDropzone from './components/ImageDropzone';
@@ -14,6 +14,7 @@ import LoginRegisterModal from './components/LoginRegisterModal';
 import PredictionsCarousel from './components/PredictionsCarousel';
 import UserHistory from './components/UserHistory';
 import { ColorSchemeContext } from './contexts/ColorScheme';
+import { notify } from './utils';
 
 initializeApp({
   apiKey: `${import.meta.env.VITE_FIREBASE_API_KEY}`,
@@ -69,23 +70,6 @@ export default function App() {
     setBoxmapImages([]);
   };
 
-  const notify = (msg: string | JSX.Element, role: 'info' | 'warning' | 'error' = 'info') => {
-    let send = toast.info;
-    if (role === 'warning') send = toast.warn;
-    if (role === 'error') send = toast.error;
-
-    send(msg, {
-      position: 'bottom-right',
-      autoClose: 5000,
-      hideProgressBar: true,
-      closeOnClick: true,
-      pauseOnHover: true,
-      draggable: true,
-      progress: undefined,
-      theme: 'dark',
-    });
-  };
-
   const predict = (file: File) => {
     setLoading(true);
 
@@ -133,7 +117,6 @@ export default function App() {
       return;
     }
 
-    // show notification with confirmation button (confirm icon)
     const content = (
       <div className="flex flex-row items-end gap-4">
         <p>Send feedback?</p>
@@ -142,7 +125,7 @@ export default function App() {
             sendFeedback(selectedImages);
             toast.dismiss();
           }}
-          className="flex flex-row gap-1 rounded-md bg-green-400 p-0.5 hover:bg-green-600"
+          className="flex flex-row gap-1 rounded-md bg-green-400 p-0.5 px-1 hover:bg-green-600"
         >
           Confirm
           <IconCheck />
@@ -199,7 +182,7 @@ export default function App() {
           position: 'bottom-right',
         });
         setUser(null);
-        clearData();
+        // clearData();
       })
       .catch((err) => {
         console.error('Failed to logout:', err);
@@ -301,9 +284,9 @@ export default function App() {
         ) : (
           <button
             onClick={() => setShowLogin(true)}
-            className="rounded bg-blue-500 px-4 py-2 text-white hover:bg-blue-700"
+            className="rounded bg-blue-500 px-2 py-2 text-white hover:bg-blue-700"
           >
-            Login/Register
+            <IconLogin2 className="text-white" />
           </button>
         )}
       </div>
@@ -311,7 +294,7 @@ export default function App() {
         <LoginRegisterModal
           onClose={() => {
             setShowLogin(false);
-            clearData();
+            // if (user) clearData();
           }}
         />
       )}

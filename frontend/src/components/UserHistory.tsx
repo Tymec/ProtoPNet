@@ -1,6 +1,7 @@
+import useOutsideClick from '@/hooks/OnOutsideClick';
+import { notify } from '@/utils';
 import { IconX } from '@tabler/icons-react';
-import { useEffect, useState } from 'react';
-import { toast } from 'react-toastify';
+import { useEffect, useRef, useState } from 'react';
 import LoadingWheel from './LoadingWheel';
 
 interface HistoryItem {
@@ -19,6 +20,9 @@ interface UserHistoryProps {
 const UserHistory: React.FC<UserHistoryProps> = ({ userId, onClose }) => {
   const [history, setHistory] = useState<HistoryItem[]>([]);
   const [loading, setLoading] = useState(true);
+  const modalRef = useRef<HTMLDivElement>(null);
+
+  useOutsideClick(modalRef, onClose);
 
   useEffect(() => {
     const fetchHistory = async () => {
@@ -44,9 +48,7 @@ const UserHistory: React.FC<UserHistoryProps> = ({ userId, onClose }) => {
         setHistory(formattedData);
       } catch (error) {
         console.error('Failed to fetch user history:', error);
-        toast.error('Failed to fetch user history', {
-          position: 'bottom-right',
-        });
+        notify('Failed to fetch user history', 'error');
       } finally {
         setLoading(false);
       }
@@ -57,7 +59,7 @@ const UserHistory: React.FC<UserHistoryProps> = ({ userId, onClose }) => {
 
   if (loading) {
     return (
-      <div className="flex h-full items-center justify-center">
+      <div className="fixed inset-0 flex h-full items-center justify-center bg-gray-800 bg-opacity-75">
         <LoadingWheel />
       </div>
     );
@@ -65,7 +67,10 @@ const UserHistory: React.FC<UserHistoryProps> = ({ userId, onClose }) => {
 
   return (
     <div className="fixed inset-0 z-50 flex flex-col items-center bg-gray-800 bg-opacity-75 p-4">
-      <div className="w-full max-w-3xl overflow-y-auto rounded-lg bg-white p-4 shadow-lg dark:bg-gray-700 dark:text-white">
+      <div
+        ref={modalRef}
+        className="w-full max-w-3xl overflow-y-auto rounded-lg bg-white p-4 shadow-lg dark:bg-gray-700 dark:text-white"
+      >
         <div className="flex items-center justify-between">
           <h2 className="text-2xl font-bold">History</h2>
           <button onClick={onClose} className=" hover:text-red-700 dark:text-white">

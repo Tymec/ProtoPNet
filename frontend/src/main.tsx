@@ -1,6 +1,7 @@
+import '@/index.css';
+
 import App from '@/App.tsx';
 import { ColorSchemeProvider } from '@/contexts/ColorScheme';
-import '@/index.css';
 import { inject } from '@vercel/analytics';
 import { injectSpeedInsights } from '@vercel/speed-insights';
 import React from 'react';
