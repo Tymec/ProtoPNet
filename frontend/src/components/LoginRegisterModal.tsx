@@ -71,9 +71,9 @@ const LoginRegisterModal = ({ onClose }: { onClose: () => void }) => {
   return (
     <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
       <div className="bg-white dark:bg-slate-700 p-6 rounded-lg shadow-lg relative w-80">
-        <button onClick={onClose} className="absolute top-2 right-2">
-          <IconX />
-        </button>
+      <button onClick={onClose} className="absolute top-2 right-2 dark:text-white">
+        <IconX />
+      </button>
         <h2 className="text-xl font-bold mb-4 text-white">{isLogin ? 'Login' : 'Register'}</h2>
         <input
           type="email"
