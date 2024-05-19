@@ -1,3 +1,5 @@
+import hashlib
+import json
 from io import BytesIO
 from uuid import uuid4
 
@@ -11,7 +13,8 @@ from slowapi import Limiter, _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
 from slowapi.util import get_remote_address
 
-from app import BOXMAP_URL, HEATMAP_URL, MODEL_INFO_PATH, MODEL_PATH, RATE_LIMIT, STATIC_DIR
+from app import BOXMAP_URL, HEATMAP_URL, MODEL_INFO_PATH, MODEL_PATH, ORIGINAL_URL, RATE_LIMIT, STATIC_DIR
+from app.firebase import FirebaseManager
 from app.s3 import get_transfer_manager, upload_image
 from net.inference import (
     box_by_top_k_prototype,
@@ -28,13 +31,32 @@ class PredictResponse(BaseModel):
     confidence: dict[str, float]
     heatmap_urls: list[str] | None
     boxmap_urls: list[str] | None
+    document_id: str | None
+
+
+class FeedbackData(BaseModel):
+    selected_images: list[str]
+    document_id: str
 
 
 class FeedbackResponse(BaseModel):
     pass
 
 
+class HistoryResponse(BaseModel):
+    image: str
+    prediction: str
+    heatmaps: list[str]
+    flagged: list[int]
+    timestamp: str
+
+
+class UserHistoryResponse(BaseModel):
+    history: list[HistoryResponse]
+
+
 model = load_model(MODEL_PATH, MODEL_INFO_PATH)
+firebase = FirebaseManager()
 
 limiter = Limiter(key_func=get_remote_address)
 app = FastAPI()
@@ -77,6 +99,10 @@ async def get_prediction(
         description="Number of items to return (of each: heatmap and boxmap)",
         gt=0,
     ),
+    user_id: str = Form(
+        default="",
+        description="User ID",
+    ),
 ) -> PredictResponse:
     if image.content_type not in [
         "image/jpeg",
@@ -97,6 +123,38 @@ async def get_prediction(
             detail="Invalid file format.",
         )
 
+    # Use the cached prediction if it exists
+    image_hash = hashlib.sha256(image_data.tobytes()).hexdigest()
+    cached_prediction = firebase.find_by_image(image_hash, user_id)
+    if cached_prediction:
+        pred_id, pred_data = cached_prediction
+        if pred_data["user_id"] != user_id and user_id != "anonymous":
+            pred_id = firebase.add_document(
+                pred_data["image"],
+                pred_data["hash"],
+                pred_data["prediction"],
+                pred_data["confidence"],
+                pred_data["heatmaps"],
+                pred_data["boxmaps"],
+                user_id,
+                pred_data["flagged"],
+            )
+
+        return PredictResponse(
+            prediction=pred_data["prediction"],
+            confidence=pred_data["confidence"],
+            heatmap_urls=pred_data["heatmaps"],
+            boxmap_urls=pred_data["boxmaps"],
+            document_id=pred_id,
+        )
+
+    s3t = get_transfer_manager(workers=20)
+    original_image_url = upload_image(
+        s3t,
+        f"{ORIGINAL_URL}/{uuid4()}.jpg",
+        image_data.convert("RGB"),
+    )
+
     pred, con, act, pat, img = predict(model, image_data)
     confidence_map = get_confidence_map(con)
 
@@ -105,9 +163,8 @@ async def get_prediction(
         confidence=confidence_map,
         heatmap_urls=None,
         boxmap_urls=None,
+        document_id=None,
     )
-
-    s3t = get_transfer_manager(workers=20)
 
     heatmap_urls: list[str] = []
     heatmaps = heatmap_by_top_k_prototype(act, pat, img, k)
@@ -145,6 +202,16 @@ async def get_prediction(
         boxmap_urls.append(url)
     return_data.boxmap_urls = boxmap_urls
 
+    return_data.document_id = firebase.add_document(
+        original_image_url,
+        image_hash,
+        return_data.prediction,
+        confidence_map,
+        heatmap_urls,
+        boxmap_urls,
+        user_id,
+    )
+
     # Uncomment to make thread wait for uploads to finish
     s3t.shutdown()
 
@@ -152,11 +219,42 @@ async def get_prediction(
 
 
 @app.post("/feedback")
-@limiter.limit(RATE_LIMIT)
 async def get_feedback(
-    request: Request,
+    selected_images: str = Form(
+        default="[]",
+        description="List of indices of images to be flagged",
+    ),
+    document_id: str = Form(
+        ...,
+        description="Document ID of the prediction",
+    ),
 ) -> FeedbackResponse:
-    raise HTTPException(
-        status_code=501,
-        detail="Not implemented yet.",
-    )
+    if document_id is None:
+        raise HTTPException(
+            status_code=400,
+            detail="Document ID is required.",
+        )
+    selected_images = json.loads(selected_images)
+    firebase.update_flagged(document_id, selected_images)
+    return FeedbackResponse()
+
+
+@app.get("/user_history", response_model=UserHistoryResponse)
+async def get_user_history(user_id: str):
+    if not user_id:
+        raise HTTPException(status_code=400, detail="User ID is required.")
+
+    docs = firebase.get_user_history(user_id)
+
+    history = [
+        HistoryResponse(
+            image=doc["image"],
+            prediction=doc["prediction"],
+            heatmaps=doc["heatmaps"],
+            flagged=doc["flagged"],
+            timestamp=doc["timestamp"],
+        )
+        for doc in docs
+    ]
+    sorted_history = sorted(history, key=lambda x: x.timestamp, reverse=True)
+    return UserHistoryResponse(history=sorted_history)

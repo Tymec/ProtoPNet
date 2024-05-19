@@ -1,5 +1,8 @@
 import Footer from '@/components/Footer';
 import { IconCheck, IconMap, IconMoon, IconSun, IconWorld } from '@tabler/icons-react';
+import { initializeApp } from 'firebase/app';
+import 'firebase/auth';
+import { User, getAuth, onAuthStateChanged, signOut } from 'firebase/auth';
 import { useContext, useEffect, useState } from 'react';
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
@@ -7,16 +10,31 @@ import HabitatMap from './components/HabitatMap';
 import ImageDrawer from './components/ImageDrawer';
 import ImageDropzone from './components/ImageDropzone';
 import LoadingWheel from './components/LoadingWheel';
+import LoginRegisterModal from './components/LoginRegisterModal';
 import PredictionsCarousel from './components/PredictionsCarousel';
+import UserHistory from './components/UserHistory';
 import { ColorSchemeContext } from './contexts/ColorScheme';
+
+initializeApp({
+  apiKey: `${import.meta.env.VITE_FIREBASE_API_KEY}`,
+  authDomain: `${import.meta.env.VITE_FIREBASE_AUTH_DOMAIN}`,
+  projectId: `${import.meta.env.VITE_FIREBASE_PROJECT_ID}`,
+  storageBucket: `${import.meta.env.VITE_FIREBASE_STORAGE_BUCKET}`,
+  messagingSenderId: `${import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID}`,
+  appId: `${import.meta.env.VITE_FIREBASE_APP_ID}`,
+  measurementId: `${import.meta.env.VITE_MEASUREMENTID}`,
+});
 
 export default function App() {
   const { colorScheme, setColorScheme } = useContext(ColorSchemeContext);
-
-  const [lastFile, setLastFile] = useState<File | null>(null);
+  const [showLogin, setShowLogin] = useState(false);
+  const [showHistory, setShowHistory] = useState(false);
+  // const [lastFile, setLastFile] = useState<File | null>(null);
   const [loading, setLoading] = useState(false);
+  const [user, setUser] = useState<User | null>(null);
 
   const [confidenceData, setConfidenceData] = useState<{ [key: string]: number }>({});
+  const [documentId, setDocumentId] = useState<string>('');
   const [habitatData, setHabitatData] = useState<string[]>([]);
   const [heatmapImages, setHeatmapImages] = useState<string[]>([]);
   const [boxmapImages, setBoxmapImages] = useState<string[]>([]);
@@ -34,6 +52,14 @@ export default function App() {
       .then((res) => res.json())
       .then((data) => setHabitats(data))
       .catch((err) => console.error(err));
+  }, []);
+
+  useEffect(() => {
+    const auth = getAuth();
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      setUser(user || null);
+    });
+    return () => unsubscribe();
   }, []);
 
   const clearData = () => {
@@ -68,6 +94,7 @@ export default function App() {
 
     formData.append('image', file);
     formData.append('k', `${import.meta.env.VITE_API_K}`);
+    formData.append('user_id', user?.uid || 'anonymous');
 
     fetch(url, {
       method: 'POST',
@@ -87,6 +114,7 @@ export default function App() {
         setConfidenceData(data.confidence);
         setHeatmapImages(data.heatmap_urls);
         setBoxmapImages(data.boxmap_urls);
+        setDocumentId(data.document_id);
 
         setHabitatData(
           data.prediction in habitats ? habitats[data.prediction as keyof typeof habitats] : []
@@ -130,6 +158,7 @@ export default function App() {
     const formData = new FormData();
 
     formData.append('selected_images', JSON.stringify(selectedImages));
+    formData.append('document_id', documentId);
 
     fetch(url, {
       method: 'POST',
@@ -149,8 +178,8 @@ export default function App() {
         // TODO: handle feedback response
         notify('Feedback sent', 'info');
 
-        clearData();
-        if (lastFile) predict(lastFile);
+        // clearData();
+        // if (lastFile) predict(lastFile);
       })
       .catch((err) => {
         console.error(err);
@@ -162,6 +191,24 @@ export default function App() {
     setHabitatData(bird in habitats ? habitats[bird as keyof typeof habitats] : []);
   };
 
+  const handleLogout = () => {
+    const auth = getAuth();
+    signOut(auth)
+      .then(() => {
+        toast.success('Logout successful', {
+          position: 'bottom-right',
+        });
+        setUser(null);
+        clearData();
+      })
+      .catch((err) => {
+        console.error('Failed to logout:', err);
+        toast.error('Failed to logout', {
+          position: 'bottom-right',
+        });
+      });
+  };
+
   return (
     <div className="min-h-screen bg-white p-8 dark:bg-slate-800">
       <div className="mx-auto flex w-3/4 flex-col gap-4">
@@ -169,7 +216,7 @@ export default function App() {
           <div className="flex flex-col gap-4">
             <ImageDropzone
               onUpload={(file: File) => {
-                setLastFile(file);
+                // setLastFile(file);
                 clearData();
                 predict(file);
               }}
@@ -216,7 +263,7 @@ export default function App() {
         <Footer />
       </div>
 
-      <div className="fixed right-0 top-0 p-4">
+      <div className="fixed left-0 top-0 p-4">
         <label className="relative mb-2 flex w-fit transition-opacity duration-500 ease-in-out hover:opacity-60">
           <input
             type="checkbox"
@@ -232,6 +279,45 @@ export default function App() {
           )}
         </label>
       </div>
+      <div className="fixed right-4 top-4">
+        {user ? (
+          <div className="flex items-center gap-4 rounded-lg bg-gray-200 p-2 shadow-lg dark:bg-gray-800">
+            <span className="font-medium text-black dark:text-white">
+              {user.displayName || user.email}
+            </span>
+            <button
+              onClick={handleLogout}
+              className="rounded bg-red-500 px-4 py-2 text-white hover:bg-red-700"
+            >
+              Logout
+            </button>
+            <button
+              onClick={() => setShowHistory(true)}
+              className="rounded bg-green-500 px-4 py-2 text-white hover:bg-green-700"
+            >
+              History
+            </button>
+          </div>
+        ) : (
+          <button
+            onClick={() => setShowLogin(true)}
+            className="rounded bg-blue-500 px-4 py-2 text-white hover:bg-blue-700"
+          >
+            Login/Register
+          </button>
+        )}
+      </div>
+      {showLogin && (
+        <LoginRegisterModal
+          onClose={() => {
+            setShowLogin(false);
+            clearData();
+          }}
+        />
+      )}
+      {showHistory && user && (
+        <UserHistory userId={user.uid} onClose={() => setShowHistory(false)} />
+      )}
       <ToastContainer />
     </div>
   );

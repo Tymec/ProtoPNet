@@ -305,7 +305,7 @@ def get_confidence_map(confidence: np.ndarray[int, np.dtype[np.float32]], limit:
         Confidence map.
     """
     # Create confidence map
-    confidence_map = {get_classification(i): confidence[i] for i in range(len(confidence))}
+    confidence_map = {get_classification(i): confidence[i].item() for i in range(len(confidence))}
 
     # Sort and limit confidence map
     confidence_map = dict(sorted(confidence_map.items(), key=lambda item: item[1], reverse=True)[:limit])

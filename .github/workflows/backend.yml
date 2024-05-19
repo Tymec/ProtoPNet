@@ -39,6 +39,12 @@ jobs:
       - name: Test and coverage
         run: |
           python -m pytest --cov=. --cov-report term --cov-report xml:coverage.xml
+        env:
+          S3_BUCKET: ${{ secrets.S3_BUCKET }}
+          S3_ACCESS: ${{ secrets.S3_ACCESS }}
+          S3_SECRET: ${{ secrets.S3_SECRET }}
+          S3_REGION: ${{ secrets.S3_REGION }}
+          FIREBASE_CREDENTIALS: ${{ secrets.FIREBASE_CREDENTIALS }}
 
       - name: Code Coverage Report
         uses: irongut/CodeCoverageSummary@v1.3.0
