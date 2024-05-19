@@ -1,15 +1,22 @@
 import { notify } from '@/utils';
 import { IconCloudUpload } from '@tabler/icons-react';
-import { useState } from 'react';
+import { useCallback } from 'react';
 
 const ALLOWED_EXTENSIONS = ['png', 'jpg', 'jpeg'];
 
 interface ImageDropzoneProps {
   onUpload: (file: File) => void;
+  preview: string;
+  setPreview: (imageUrl: string) => void;
 }
 
-export default function ImageDropzone({ onUpload }: ImageDropzoneProps) {
-  const [preview, setPreview] = useState<string | undefined>(undefined);
+export default function ImageDropzone({ onUpload, preview, setPreview }: ImageDropzoneProps) {
+  const handlePreviewChange = useCallback(
+    (imageUrl: string) => {
+      setPreview(imageUrl);
+    },
+    [setPreview]
+  );
 
   const uploadFile = (files: FileList | null) => {
     if (!files || files.length === 0) return;
@@ -18,7 +25,7 @@ export default function ImageDropzone({ onUpload }: ImageDropzoneProps) {
     const fileExt = file.name.split('.').pop();
     if (fileExt && ALLOWED_EXTENSIONS.includes(fileExt.toLowerCase())) {
       const fileUrl = URL.createObjectURL(file);
-      setPreview(fileUrl);
+      handlePreviewChange(fileUrl);
       onUpload(file);
     } else {
       // alert('Please select a valid image file (PNG, JPG or JPEG)');

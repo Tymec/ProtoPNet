@@ -1,4 +1,4 @@
-import { IconChevronLeft, IconChevronRight } from '@tabler/icons-react';
+import { IconChevronLeft, IconChevronRight, IconEraser } from '@tabler/icons-react';
 import { useCallback, useEffect, useState } from 'react';
 
 interface PredictionsCarouselProps {
@@ -6,6 +6,7 @@ interface PredictionsCarouselProps {
   autoSlide?: boolean;
   autoSlideInterval?: number;
   onUpdateBird: (birdName: string) => void;
+  onClear: () => void;
 }
 
 export default function PredictionsCarousel({
@@ -13,6 +14,7 @@ export default function PredictionsCarousel({
   autoSlide = false,
   autoSlideInterval = 3000,
   onUpdateBird,
+  onClear,
 }: PredictionsCarouselProps) {
   const birdNames = Object.keys(confidenceData);
   const [curr, setCurr] = useState(0);
@@ -31,6 +33,17 @@ export default function PredictionsCarousel({
 
   return (
     <div className="relative overflow-hidden">
+      <label className="absolute right-0 top-0 z-10 flex w-fit transition-opacity duration-500 ease-in-out hover:opacity-60">
+        <input
+          type="checkbox"
+          aria-label="Clear data"
+          title="Clear data"
+          className="peer absolute appearance-none"
+          onChange={() => onClear()}
+        />
+        <IconEraser className="text-black dark:text-white" />
+      </label>
+
       {birdNames.map((birdName) => (
         <div
           key={birdName}
