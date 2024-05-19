@@ -13,7 +13,7 @@ import { initializeApp } from "firebase/app";
 import 'firebase/auth';
 import { getAuth, onAuthStateChanged, signOut } from "firebase/auth";
 import LoginRegisterModal from './components/LoginRegisterModal';
-
+import UserHistory from './components/UserHistory'; // Importujemy komponent
 
 const firebaseConfig = {
   apiKey: `${import.meta.env.VITE_FIREBASE_API_KEY}`,
@@ -27,11 +27,10 @@ const firebaseConfig = {
 
 const app = initializeApp(firebaseConfig);
 
-
 export default function App() {
   const { colorScheme, setColorScheme } = useContext(ColorSchemeContext);
   const [showLogin, setShowLogin] = useState(false);
-
+  const [showHistory, setShowHistory] = useState(false); // Dodajemy stan dla historii
   const [lastFile, setLastFile] = useState<File | null>(null);
   const [loading, setLoading] = useState(false);
   const [user, setUser] = useState<any>(null); 
@@ -212,7 +211,6 @@ export default function App() {
       });
   };
 
-  console.log('user', user);
   return (
     <div className="min-h-screen bg-white p-8 dark:bg-slate-800">
       <div className="mx-auto flex w-3/4 flex-col gap-4">
@@ -294,11 +292,11 @@ export default function App() {
               Logout
             </button>
             <button
-            onClick={() => setShowHistory(true)}
-            className="bg-green-500 hover:bg-green-700 text-white py-2 px-4 rounded"
-          >
-            History
-          </button>
+              onClick={() => setShowHistory(true)} // Dodajemy logikę do wyświetlania historii
+              className="bg-green-500 hover:bg-green-700 text-white py-2 px-4 rounded"
+            >
+              History
+            </button>
           </div>
         ) : (
           <button
@@ -313,6 +311,9 @@ export default function App() {
         setShowLogin(false);
         clearData();
       }} />}
+      {showHistory && user && (
+        <UserHistory userId={user.uid} onClose={() => setShowHistory(false)} />
+      )}
       <ToastContainer />
     </div>
   );
