@@ -198,3 +198,6 @@ pyrightconfig.json
 # Static files
 static/*
 !static/favicon.ico
+
+# Firebase service account
+service-account.json
