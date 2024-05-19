@@ -283,8 +283,8 @@ export default function App() {
       </div>
       <div className="fixed top-4 right-4">
         {user ? (
-          <div className="flex items-center gap-4 bg-gray-800 p-2 rounded-lg shadow-lg">
-            <span className="text-white font-medium">{user.displayName || user.email}</span>
+          <div className="bg-gray-200 flex items-center gap-4 dark:bg-gray-800 p-2 rounded-lg shadow-lg">
+            <span className="text-black dark:text-white font-medium">{user.displayName || user.email}</span>
             <button
               onClick={handleLogout}
               className="bg-red-500 hover:bg-red-700 text-white py-2 px-4 rounded"
