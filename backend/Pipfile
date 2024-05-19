@@ -20,6 +20,7 @@ uvicorn = {version = "*", extras = ["standard"]}
 python-multipart = "*"
 boto3 = "*"
 slowapi = "*"
+firebase-admin = "*"
 
 [dev-packages]
 ruff = "*"
