@@ -13,7 +13,7 @@ import { initializeApp } from "firebase/app";
 import 'firebase/auth';
 import { getAuth, onAuthStateChanged, signOut } from "firebase/auth";
 import LoginRegisterModal from './components/LoginRegisterModal';
-import UserHistory from './components/UserHistory'; // Importujemy komponent
+import UserHistory from './components/UserHistory';
 
 const firebaseConfig = {
   apiKey: `${import.meta.env.VITE_FIREBASE_API_KEY}`,
@@ -30,7 +30,7 @@ const app = initializeApp(firebaseConfig);
 export default function App() {
   const { colorScheme, setColorScheme } = useContext(ColorSchemeContext);
   const [showLogin, setShowLogin] = useState(false);
-  const [showHistory, setShowHistory] = useState(false); // Dodajemy stan dla historii
+  const [showHistory, setShowHistory] = useState(false); 
   const [lastFile, setLastFile] = useState<File | null>(null);
   const [loading, setLoading] = useState(false);
   const [user, setUser] = useState<any>(null); 
@@ -292,7 +292,7 @@ export default function App() {
               Logout
             </button>
             <button
-              onClick={() => setShowHistory(true)} // Dodajemy logikę do wyświetlania historii
+              onClick={() => setShowHistory(true)} 
               className="bg-green-500 hover:bg-green-700 text-white py-2 px-4 rounded"
             >
               History
