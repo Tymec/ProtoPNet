@@ -1,7 +1,8 @@
-import { useState } from 'react';
-import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword } from "firebase/auth";
-import { toast } from 'react-toastify';
 import { IconX } from '@tabler/icons-react';
+import { FirebaseError } from 'firebase/app';
+import { createUserWithEmailAndPassword, getAuth, signInWithEmailAndPassword } from 'firebase/auth';
+import { useState } from 'react';
+import { toast } from 'react-toastify';
 
 const LoginRegisterModal = ({ onClose }: { onClose: () => void }) => {
   const [isLogin, setIsLogin] = useState(true);
@@ -15,7 +16,7 @@ const LoginRegisterModal = ({ onClose }: { onClose: () => void }) => {
   const handleAuth = async () => {
     if (!isLogin && password !== confirmPassword) {
       toast.error('Passwords do not match', {
-        position: "bottom-right"
+        position: 'bottom-right',
       });
       return;
     }
@@ -25,42 +26,42 @@ const LoginRegisterModal = ({ onClose }: { onClose: () => void }) => {
       if (isLogin) {
         await signInWithEmailAndPassword(auth, email, password);
         toast.success('Login successful', {
-          position: "bottom-right"
+          position: 'bottom-right',
         });
       } else {
         await createUserWithEmailAndPassword(auth, email, password);
         toast.success('Registration successful', {
-          position: "bottom-right"
+          position: 'bottom-right',
         });
       }
       onClose();
-    } catch (error: any) {
+    } catch (error) {
       console.error('Authentication error', error);
-      if (error.code) {
+      if (error instanceof FirebaseError && error.code) {
         switch (error.code) {
           case 'auth/email-already-in-use':
             toast.error('Email is already in use', {
-              position: "bottom-right"
+              position: 'bottom-right',
             });
             break;
           case 'auth/invalid-email':
             toast.error('Invalid email address', {
-              position: "bottom-right"
+              position: 'bottom-right',
             });
             break;
           case 'auth/weak-password':
             toast.error('Password is too weak', {
-              position: "bottom-right"
+              position: 'bottom-right',
             });
             break;
           default:
             toast.error('Authentication failed', {
-              position: "bottom-right"
+              position: 'bottom-right',
             });
         }
       } else {
         toast.error('Authentication failed', {
-          position: "bottom-right"
+          position: 'bottom-right',
         });
       }
     } finally {
@@ -69,16 +70,16 @@ const LoginRegisterModal = ({ onClose }: { onClose: () => void }) => {
   };
 
   return (
-    <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
-      <div className="bg-white dark:bg-slate-700 p-6 rounded-lg shadow-lg relative w-80">
-      <button onClick={onClose} className="absolute top-2 right-2 dark:text-white">
-        <IconX />
-      </button>
-        <h2 className="text-xl font-bold mb-4 dark:text-white">{isLogin ? 'Login' : 'Register'}</h2>
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
+      <div className="relative w-80 rounded-lg bg-white p-6 shadow-lg dark:bg-slate-700">
+        <button onClick={onClose} className="absolute right-2 top-2 dark:text-white">
+          <IconX />
+        </button>
+        <h2 className="mb-4 text-xl font-bold dark:text-white">{isLogin ? 'Login' : 'Register'}</h2>
         <input
           type="email"
           placeholder="Email"
-          className="w-full p-2 mb-4 border border-gray-300 rounded"
+          className="mb-4 w-full rounded border border-gray-300 p-2"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           disabled={loading}
@@ -86,7 +87,7 @@ const LoginRegisterModal = ({ onClose }: { onClose: () => void }) => {
         <input
           type="password"
           placeholder="Password"
-          className="w-full p-2 mb-4 border border-gray-300 rounded"
+          className="mb-4 w-full rounded border border-gray-300 p-2"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
           disabled={loading}
@@ -95,7 +96,7 @@ const LoginRegisterModal = ({ onClose }: { onClose: () => void }) => {
           <input
             type="password"
             placeholder="Confirm Password"
-            className="w-full p-2 mb-4 border border-gray-300 rounded"
+            className="mb-4 w-full rounded border border-gray-300 p-2"
             value={confirmPassword}
             onChange={(e) => setConfirmPassword(e.target.value)}
             disabled={loading}
@@ -103,7 +104,7 @@ const LoginRegisterModal = ({ onClose }: { onClose: () => void }) => {
         )}
         <button
           onClick={handleAuth}
-          className="w-full bg-blue-500 hover:bg-blue-700 text-white py-2 rounded"
+          className="w-full rounded bg-blue-500 py-2 text-white hover:bg-blue-700"
           disabled={loading}
         >
           {loading ? 'Loading...' : isLogin ? 'Login' : 'Register'}

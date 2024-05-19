@@ -1,7 +1,7 @@
+import { IconX } from '@tabler/icons-react';
 import { useEffect, useState } from 'react';
 import { toast } from 'react-toastify';
 import LoadingWheel from './LoadingWheel';
-import { IconX } from '@tabler/icons-react';
 
 interface HistoryItem {
   image: string;
@@ -23,7 +23,9 @@ const UserHistory: React.FC<UserHistoryProps> = ({ userId, onClose }) => {
   useEffect(() => {
     const fetchHistory = async () => {
       try {
-        const response = await fetch(`${import.meta.env.VITE_API_URL}/user_history?user_id=${userId}`);
+        const response = await fetch(
+          `${import.meta.env.VITE_API_URL}/user_history?user_id=${userId}`
+        );
         const data = await response.json();
         const formattedData = data.history.map((item: HistoryItem) => {
           const date = new Date(`${item.timestamp}Z`);
@@ -34,17 +36,17 @@ const UserHistory: React.FC<UserHistoryProps> = ({ userId, onClose }) => {
           return {
             image: item.image,
             prediction: item.prediction,
-            timestamp: formattedDate, 
+            timestamp: formattedDate,
             heatmaps: item.heatmaps.map((url) => String(url)),
-            flagged: item.flagged.map((url) => String(url))
+            flagged: item.flagged.map((url) => String(url)),
           };
         });
         setHistory(formattedData);
       } catch (error) {
         console.error('Failed to fetch user history:', error);
-        toast.error('Failed to fetch user history',  {
-            position: "bottom-right"
-          });
+        toast.error('Failed to fetch user history', {
+          position: 'bottom-right',
+        });
       } finally {
         setLoading(false);
       }
@@ -55,16 +57,16 @@ const UserHistory: React.FC<UserHistoryProps> = ({ userId, onClose }) => {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-full">
+      <div className="flex h-full items-center justify-center">
         <LoadingWheel />
       </div>
     );
   }
 
   return (
-    <div className="fixed inset-0 bg-gray-800 bg-opacity-75 z-50 flex flex-col items-center p-4">
-      <div className="bg-white dark:bg-gray-700 dark:text-white rounded-lg shadow-lg w-full max-w-3xl p-4 overflow-y-auto">
-        <div className="flex justify-between items-center">
+    <div className="fixed inset-0 z-50 flex flex-col items-center bg-gray-800 bg-opacity-75 p-4">
+      <div className="w-full max-w-3xl overflow-y-auto rounded-lg bg-white p-4 shadow-lg dark:bg-gray-700 dark:text-white">
+        <div className="flex items-center justify-between">
           <h2 className="text-2xl font-bold">History</h2>
           <button onClick={onClose} className=" hover:text-red-700 dark:text-white">
             <IconX />
@@ -76,18 +78,30 @@ const UserHistory: React.FC<UserHistoryProps> = ({ userId, onClose }) => {
           ) : (
             <>
               {history.map((item, index) => (
-                <div key={index} className="p-4 border rounded-lg dark:border-gray-600">
-                  <p><strong>Date:</strong> {item.timestamp}</p>
-                  <p><strong>Prediction:</strong> {item.prediction}</p>
+                <div key={index} className="rounded-lg border p-4 dark:border-gray-600">
+                  <p>
+                    <strong>Date:</strong> {item.timestamp}
+                  </p>
+                  <p>
+                    <strong>Prediction:</strong> {item.prediction}
+                  </p>
                   <div className="flex space-x-4 overflow-x-auto">
-                    {item.image && <img src={item.image} alt={`Image ${index}`} className="w-32 h-32 object-cover mr-4" />}
-                    
+                    {item.image && (
+                      <img
+                        src={item.image}
+                        alt={`Image ${index}`}
+                        className="mr-4 h-32 w-32 object-cover"
+                      />
+                    )}
+
                     {item.heatmaps.map((url, idx) => (
-                      <img 
-                        key={idx} 
-                        src={url} 
-                        alt={`Heatmap ${idx}`} 
-                        className={`w-32 h-32 object-cover ${item.flagged.includes(idx.toString()) ? 'border-red-500 border-2' : ''}`} 
+                      <img
+                        key={idx}
+                        src={url}
+                        alt={`Heatmap ${idx}`}
+                        className={`h-32 w-32 object-cover ${
+                          item.flagged.includes(idx.toString()) ? 'border-2 border-red-500' : ''
+                        }`}
                       />
                     ))}
                   </div>
