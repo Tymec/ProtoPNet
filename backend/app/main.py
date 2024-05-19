@@ -42,6 +42,16 @@ class FeedbackData(BaseModel):
 class FeedbackResponse(BaseModel):
     pass
 
+class HistoryResponse(BaseModel):
+    image: str
+    prediction: str
+    heatmaps: List[str]
+    flagged: List[int]
+    timestamp: str
+
+class UserHistoryResponse(BaseModel):
+    history: List[HistoryResponse]
+
 model = load_model(MODEL_PATH, MODEL_INFO_PATH)
 firebase = FirebaseManager()
 
@@ -113,7 +123,7 @@ async def get_prediction(
     s3t = get_transfer_manager(workers=20)
     original_image_url = upload_image(
         s3t,
-        f"{ORIGINAL_URL}/{uuid4()}.jpg",
+        f"{HEATMAP_URL}/{uuid4()}.jpg",
         image_data.convert("RGB"),
     )
 
@@ -191,3 +201,26 @@ async def get_feedback(
     selected_images = json.loads(selected_images)
     firebase.update_flagged(document_id, selected_images)
     return FeedbackResponse()
+
+@app.get("/user_history", response_model=UserHistoryResponse)
+async def get_user_history(user_id: str):
+    if not user_id:
+        raise HTTPException(
+            status_code=400,
+            detail="User ID is required."
+        )
+    
+    docs = firebase.get_user_history(user_id)
+
+    history = [
+        HistoryResponse(
+            image=doc["image"],
+            prediction=doc["prediction"],
+            heatmaps=doc["heatmaps"],
+            flagged=doc["flagged"],
+            timestamp=doc["timestamp"],
+        )
+        for doc in docs
+    ]
+    sorted_history = sorted(history, key=lambda x: x.timestamp, reverse=True)
+    return UserHistoryResponse(history=sorted_history)
