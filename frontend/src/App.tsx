@@ -9,12 +9,32 @@ import ImageDropzone from './components/ImageDropzone';
 import LoadingWheel from './components/LoadingWheel';
 import PredictionsCarousel from './components/PredictionsCarousel';
 import { ColorSchemeContext } from './contexts/ColorScheme';
+import { initializeApp } from "firebase/app";
+import 'firebase/auth';
+import { getAuth, onAuthStateChanged, signOut } from "firebase/auth";
+import LoginRegisterModal from './components/LoginRegisterModal';
+
+
+const firebaseConfig = {
+  apiKey: `${import.meta.env.VITE_FIREBASE_API_KEY}`,
+  authDomain: `${import.meta.env.VITE_FIREBASE_AUTH_DOMAIN}`,
+  projectId: `${import.meta.env.VITE_FIREBASE_PROJECT_ID}`,
+  storageBucket: `${import.meta.env.VITE_FIREBASE_STORAGE_BUCKET}`,
+  messagingSenderId: `${import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID}`,
+  appId: `${import.meta.env.VITE_FIREBASE_APP_ID}`,
+  measurementId: `${import.meta.env.VITE_MEASUREMENTID}`
+};
+
+const app = initializeApp(firebaseConfig);
+
 
 export default function App() {
   const { colorScheme, setColorScheme } = useContext(ColorSchemeContext);
+  const [showLogin, setShowLogin] = useState(false);
 
   const [lastFile, setLastFile] = useState<File | null>(null);
   const [loading, setLoading] = useState(false);
+  const [user, setUser] = useState<any>(null); 
 
   const [confidenceData, setConfidenceData] = useState<{ [key: string]: number }>({});
   const [documentId, setDocumentId] = useState<string>('');
@@ -35,6 +55,14 @@ export default function App() {
       .then((res) => res.json())
       .then((data) => setHabitats(data))
       .catch((err) => console.error(err));
+  }, []);
+
+  useEffect(() => {
+    const auth = getAuth();
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      setUser(user || null);
+    });
+    return () => unsubscribe();
   }, []);
 
   const clearData = () => {
@@ -165,6 +193,23 @@ export default function App() {
     setHabitatData(bird in habitats ? habitats[bird as keyof typeof habitats] : []);
   };
 
+  const handleLogout = () => {
+    const auth = getAuth();
+    signOut(auth)
+      .then(() => {
+        toast.success('Logout successful', {
+          position: "bottom-right"
+        });
+        setUser(null);
+      })
+      .catch((err) => {
+        console.error('Failed to logout:', err);
+        toast.error('Failed to logout', {
+          position: "bottom-right"
+        });
+      });
+  };
+
   return (
     <div className="min-h-screen bg-white p-8 dark:bg-slate-800">
       <div className="mx-auto flex w-3/4 flex-col gap-4">
@@ -219,7 +264,7 @@ export default function App() {
         <Footer />
       </div>
 
-      <div className="fixed right-0 top-0 p-4">
+      <div className="fixed left-0 top-0 p-4">
         <label className="relative mb-2 flex w-fit transition-opacity duration-500 ease-in-out hover:opacity-60">
           <input
             type="checkbox"
@@ -235,6 +280,37 @@ export default function App() {
           )}
         </label>
       </div>
+      <div className="fixed top-4 right-4">
+        {user ? (
+          <div className="flex items-center gap-4 bg-gray-800 p-2 rounded-lg shadow-lg">
+            {user.photoURL && (
+              <img
+                 src={user.photoURL}
+                 alt="Profile"
+                 className="w-10 h-10 rounded-full"
+              />
+            )}
+            <span className="text-white font-medium">{user.displayName || user.email}</span>
+            <button
+              onClick={handleLogout}
+              className="bg-red-500 hover:bg-red-700 text-white py-2 px-4 rounded"
+            >
+              Logout
+            </button>
+          </div>
+        ) : (
+          <button
+            onClick={() => setShowLogin(true)}
+            className="bg-blue-500 hover:bg-blue-700 text-white py-2 px-4 rounded"
+          >
+            Login/Register
+          </button>
+        )}
+      </div>
+
+
+      {showLogin && <LoginRegisterModal onClose={() => setShowLogin(false)} />}
+
       <ToastContainer />
     </div>
   );
