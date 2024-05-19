@@ -97,6 +97,7 @@ export default function App() {
 
     formData.append('image', file);
     formData.append('k', `${import.meta.env.VITE_API_K}`);
+    formData.append('user_id', user?.uid || 'anonymous')
 
     fetch(url, {
       method: 'POST',
@@ -201,6 +202,7 @@ export default function App() {
           position: "bottom-right"
         });
         setUser(null);
+        clearData();
       })
       .catch((err) => {
         console.error('Failed to logout:', err);
@@ -210,6 +212,7 @@ export default function App() {
       });
   };
 
+  console.log('user', user);
   return (
     <div className="min-h-screen bg-white p-8 dark:bg-slate-800">
       <div className="mx-auto flex w-3/4 flex-col gap-4">
@@ -283,13 +286,6 @@ export default function App() {
       <div className="fixed top-4 right-4">
         {user ? (
           <div className="flex items-center gap-4 bg-gray-800 p-2 rounded-lg shadow-lg">
-            {user.photoURL && (
-              <img
-                 src={user.photoURL}
-                 alt="Profile"
-                 className="w-10 h-10 rounded-full"
-              />
-            )}
             <span className="text-white font-medium">{user.displayName || user.email}</span>
             <button
               onClick={handleLogout}
@@ -307,10 +303,10 @@ export default function App() {
           </button>
         )}
       </div>
-
-
-      {showLogin && <LoginRegisterModal onClose={() => setShowLogin(false)} />}
-
+      {showLogin && <LoginRegisterModal onClose={() => {
+        setShowLogin(false);
+        clearData();
+      }} />}
       <ToastContainer />
     </div>
   );
