@@ -13,7 +13,7 @@ from slowapi import Limiter, _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
 from slowapi.util import get_remote_address
 
-from app import BOXMAP_URL, HEATMAP_URL, MODEL_INFO_PATH, MODEL_PATH, RATE_LIMIT, STATIC_DIR
+from app import BOXMAP_URL, HEATMAP_URL, MODEL_INFO_PATH, MODEL_PATH, ORIGINAL_URL, RATE_LIMIT, STATIC_DIR
 from app.firebase import FirebaseManager
 from app.s3 import get_transfer_manager, upload_image
 from net.inference import (
@@ -151,7 +151,7 @@ async def get_prediction(
     s3t = get_transfer_manager(workers=20)
     original_image_url = upload_image(
         s3t,
-        f"{HEATMAP_URL}/{uuid4()}.jpg",  # FIXME
+        f"{ORIGINAL_URL}/{uuid4()}.jpg",
         image_data.convert("RGB"),
     )
 

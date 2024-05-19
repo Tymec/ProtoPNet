@@ -1,15 +1,16 @@
+import json
 from datetime import datetime
 
 import firebase_admin
 from firebase_admin import credentials, firestore
 
-from app import FIREBASE_COLLECTION, FIREBASE_SA_PATH
+from app import FIREBASE_COLLECTION, FIREBASE_CREDENTIALS
 
 
 class FirebaseManager:
     def __init__(self) -> None:
         if not firebase_admin._apps:
-            firebase_admin.initialize_app(credentials.Certificate(FIREBASE_SA_PATH))
+            firebase_admin.initialize_app(credentials.Certificate(json.loads(FIREBASE_CREDENTIALS)))
         self.db = firestore.client()
         self.collection = self.db.collection(FIREBASE_COLLECTION)
 
