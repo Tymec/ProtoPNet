@@ -293,6 +293,12 @@ export default function App() {
             >
               Logout
             </button>
+            <button
+            onClick={() => setShowHistory(true)}
+            className="bg-green-500 hover:bg-green-700 text-white py-2 px-4 rounded"
+          >
+            History
+          </button>
           </div>
         ) : (
           <button
