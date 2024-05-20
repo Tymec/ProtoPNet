@@ -3,6 +3,7 @@ from datetime import datetime
 
 import firebase_admin
 from firebase_admin import credentials, firestore
+from google.cloud.firestore_v1.base_query import FieldFilter
 
 from app import FIREBASE_COLLECTION, FIREBASE_CREDENTIALS
 
@@ -41,9 +42,12 @@ class FirebaseManager:
         return doc_ref[1].id
 
     def find_by_image(self, image_hash: str, user_id: str) -> tuple[str, dict] | None:
-        found = self.collection.where("hash", "==", image_hash).where("user_id", "==", user_id).get()
+        query = self.collection.where(filter=FieldFilter("hash", "==", image_hash))
+
+        found = query.where(filter=FieldFilter("user_id", "==", user_id)).get()
         if len(found) == 0:
-            found = self.collection.where("hash", "==", image_hash).where("user_id", "==", "anonymous").get()
+            found = query.where(filter=FieldFilter("user_id", "==", "anonymous")).get()
+
         return (found[0].id, found[0].to_dict()) if found else None
 
     def update_flagged(self, doc_id: str, flagged: list[int]) -> None:
@@ -51,19 +55,5 @@ class FirebaseManager:
         doc_ref.update({"flagged": flagged})
 
     def get_user_history(self, user_id: str) -> list[dict]:
-        docs = self.collection.where("user_id", "==", user_id).stream()
-
-        user_history = []
-        for doc in docs:
-            data = doc.to_dict()
-            user_history.append(
-                {
-                    "image": data["image"],
-                    "prediction": data["prediction"],
-                    "heatmaps": data["heatmaps"],
-                    "flagged": data["flagged"],
-                    "timestamp": data["timestamp"],
-                }
-            )
-
-        return user_history
+        query = self.collection.where(filter=FieldFilter("user_id", "==", user_id)).get()
+        return [{"id": doc.id, **doc.to_dict()} for doc in query]

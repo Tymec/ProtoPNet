@@ -1,30 +1,40 @@
 import { IconFlag } from '@tabler/icons-react';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import LoadingWheel from './LoadingWheel';
 
 interface HeatmapProps {
   images: string[];
   overlay: string[];
   uploaded: boolean;
-  sendFeedback: (selectedImages: number[]) => void;
+  selectedImages: number[];
+  setSelectedImages: (selectedImages: number[]) => void;
+  onFeedback: () => void;
 }
 
-export default function ImageDrawer({ images, overlay, uploaded, sendFeedback }: HeatmapProps) {
+export default function ImageDrawer({
+  images,
+  overlay,
+  uploaded,
+  selectedImages,
+  setSelectedImages,
+  onFeedback,
+}: HeatmapProps) {
   const [imagesLoaded, setImagesLoaded] = useState(false);
   const [hoverIndex, setHoverIndex] = useState(-1);
-  const [selectedImages, setSelectedImages] = useState<number[]>([]);
+
+  const handleSelectedImagesChange = useCallback(
+    (indices: number[]) => {
+      setSelectedImages(indices);
+    },
+    [setSelectedImages]
+  );
 
   const selectImage = (index: number) => {
     if (selectedImages.includes(index)) {
-      setSelectedImages(selectedImages.filter((i) => i !== index));
+      handleSelectedImagesChange(selectedImages.filter((i) => i !== index));
     } else {
-      setSelectedImages([...selectedImages, index]);
+      handleSelectedImagesChange([...selectedImages, index]);
     }
-  };
-
-  const onFeedback = () => {
-    sendFeedback(selectedImages);
-    setSelectedImages([]);
   };
 
   useEffect(() => {
@@ -59,6 +69,7 @@ export default function ImageDrawer({ images, overlay, uploaded, sendFeedback }:
         <input
           type="checkbox"
           aria-label="Flag selected images as incorrect"
+          title="Flag selected images as incorrect"
           className="peer absolute appearance-none"
           onChange={() => onFeedback()}
           disabled={selectedImages.length === 0}

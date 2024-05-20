@@ -43,16 +43,14 @@ class FeedbackResponse(BaseModel):
     pass
 
 
-class HistoryResponse(BaseModel):
-    image: str
-    prediction: str
-    heatmaps: list[str]
+class HistoryItem(PredictResponse):
+    image_url: str
     flagged: list[int]
     timestamp: str
 
 
 class UserHistoryResponse(BaseModel):
-    history: list[HistoryResponse]
+    history: list[HistoryItem]
 
 
 model = load_model(MODEL_PATH, MODEL_INFO_PATH)
@@ -244,17 +242,18 @@ async def get_user_history(user_id: str):
     if not user_id:
         raise HTTPException(status_code=400, detail="User ID is required.")
 
-    docs = firebase.get_user_history(user_id)
-
     history = [
-        HistoryResponse(
-            image=doc["image"],
+        HistoryItem(
+            image_url=doc["image"],
             prediction=doc["prediction"],
-            heatmaps=doc["heatmaps"],
+            confidence=doc["confidence"],
+            heatmap_urls=doc["heatmaps"],
+            boxmap_urls=doc["boxmaps"],
             flagged=doc["flagged"],
             timestamp=doc["timestamp"],
+            document_id=doc["id"],
         )
-        for doc in docs
+        for doc in firebase.get_user_history(user_id)
     ]
     sorted_history = sorted(history, key=lambda x: x.timestamp, reverse=True)
     return UserHistoryResponse(history=sorted_history)

@@ -1,43 +1,42 @@
+import 'react-toastify/dist/ReactToastify.css';
+
 import Footer from '@/components/Footer';
+import { auth } from '@/firebase';
 import { IconCheck, IconMap, IconMoon, IconSun, IconWorld } from '@tabler/icons-react';
-import { initializeApp } from 'firebase/app';
-import 'firebase/auth';
-import { User, getAuth, onAuthStateChanged, signOut } from 'firebase/auth';
+import {
+  User,
+  isSignInWithEmailLink,
+  onAuthStateChanged,
+  signInWithEmailLink,
+  signOut,
+} from 'firebase/auth';
 import { useContext, useEffect, useState } from 'react';
 import { ToastContainer, toast } from 'react-toastify';
-import 'react-toastify/dist/ReactToastify.css';
 import HabitatMap from './components/HabitatMap';
 import ImageDrawer from './components/ImageDrawer';
 import ImageDropzone from './components/ImageDropzone';
 import LoadingWheel from './components/LoadingWheel';
 import LoginRegisterModal from './components/LoginRegisterModal';
 import PredictionsCarousel from './components/PredictionsCarousel';
+import UserBar from './components/UserBar';
 import UserHistory from './components/UserHistory';
 import { ColorSchemeContext } from './contexts/ColorScheme';
-
-initializeApp({
-  apiKey: `${import.meta.env.VITE_FIREBASE_API_KEY}`,
-  authDomain: `${import.meta.env.VITE_FIREBASE_AUTH_DOMAIN}`,
-  projectId: `${import.meta.env.VITE_FIREBASE_PROJECT_ID}`,
-  storageBucket: `${import.meta.env.VITE_FIREBASE_STORAGE_BUCKET}`,
-  messagingSenderId: `${import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID}`,
-  appId: `${import.meta.env.VITE_FIREBASE_APP_ID}`,
-  measurementId: `${import.meta.env.VITE_MEASUREMENTID}`,
-});
+import { notify } from './utils';
 
 export default function App() {
   const { colorScheme, setColorScheme } = useContext(ColorSchemeContext);
   const [showLogin, setShowLogin] = useState(false);
   const [showHistory, setShowHistory] = useState(false);
-  // const [lastFile, setLastFile] = useState<File | null>(null);
   const [loading, setLoading] = useState(false);
   const [user, setUser] = useState<User | null>(null);
 
+  const [imagePreview, setImagePreview] = useState<string>('');
   const [confidenceData, setConfidenceData] = useState<{ [key: string]: number }>({});
   const [documentId, setDocumentId] = useState<string>('');
   const [habitatData, setHabitatData] = useState<string[]>([]);
   const [heatmapImages, setHeatmapImages] = useState<string[]>([]);
   const [boxmapImages, setBoxmapImages] = useState<string[]>([]);
+  const [flaggedImages, setFlaggedImages] = useState<number[]>([]);
 
   const [habitats, setHabitats] = useState<{ [key: string]: string[] }>({});
   const [globeMap, setGlobeMap] = useState(false);
@@ -55,36 +54,62 @@ export default function App() {
   }, []);
 
   useEffect(() => {
-    const auth = getAuth();
     const unsubscribe = onAuthStateChanged(auth, (user) => {
       setUser(user || null);
     });
     return () => unsubscribe();
   }, []);
 
-  const clearData = () => {
-    setConfidenceData({});
-    setHabitatData([]);
-    setHeatmapImages([]);
-    setBoxmapImages([]);
+  useEffect(() => {
+    if (isSignInWithEmailLink(auth, window.location.href)) {
+      const email = window.localStorage.getItem('emailForSignIn');
+      if (email) {
+        signInWithEmailLink(auth, email, window.location.href)
+          .then((result) => {
+            window.localStorage.removeItem('emailForSignIn');
+            setUser(result.user);
+            notify('Sign-in successful', 'success');
+          })
+          .catch((err) => {
+            notify('Sign-in failed', 'error');
+            console.error('Sign-in error:', err);
+          });
+      } else {
+        notify('Email not found', 'error');
+      }
+    }
+
+    window.history.replaceState(null, '', '/');
+  }, []);
+
+  useEffect(() => {
+    const handleEscape = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        setShowLogin(false);
+        setShowHistory(false);
+      }
+    };
+    document.addEventListener('keydown', handleEscape);
+    return () => document.removeEventListener('keydown', handleEscape);
+  }, []);
+
+  const setData = (
+    prediction: string,
+    confidence: { [key: string]: number },
+    heatmapUrls: string[],
+    boxmapUrls: string[],
+    documentId: string,
+    flagged: number[] = []
+  ) => {
+    setConfidenceData(confidence);
+    setHeatmapImages(heatmapUrls);
+    setBoxmapImages(boxmapUrls);
+    setHabitatData(prediction in habitats ? habitats[prediction as keyof typeof habitats] : []);
+    setDocumentId(documentId);
+    setFlaggedImages(flagged);
   };
 
-  const notify = (msg: string | JSX.Element, role: 'info' | 'warning' | 'error' = 'info') => {
-    let send = toast.info;
-    if (role === 'warning') send = toast.warn;
-    if (role === 'error') send = toast.error;
-
-    send(msg, {
-      position: 'bottom-right',
-      autoClose: 5000,
-      hideProgressBar: true,
-      closeOnClick: true,
-      pauseOnHover: true,
-      draggable: true,
-      progress: undefined,
-      theme: 'dark',
-    });
-  };
+  const clearData = () => setData('', {}, [], [], '');
 
   const predict = (file: File) => {
     setLoading(true);
@@ -111,13 +136,12 @@ export default function App() {
           return;
         }
 
-        setConfidenceData(data.confidence);
-        setHeatmapImages(data.heatmap_urls);
-        setBoxmapImages(data.boxmap_urls);
-        setDocumentId(data.document_id);
-
-        setHabitatData(
-          data.prediction in habitats ? habitats[data.prediction as keyof typeof habitats] : []
+        setData(
+          data.prediction,
+          data.confidence,
+          data.heatmap_urls,
+          data.boxmap_urls,
+          data.document_id
         );
       })
       .catch((err) => {
@@ -127,22 +151,21 @@ export default function App() {
       .finally(() => setLoading(false));
   };
 
-  const feedback = (selectedImages: number[]) => {
-    if (selectedImages.length === 0) {
+  const feedback = () => {
+    if (flaggedImages.length === 0) {
       notify('Please select at least one image', 'error');
       return;
     }
 
-    // show notification with confirmation button (confirm icon)
     const content = (
       <div className="flex flex-row items-end gap-4">
         <p>Send feedback?</p>
         <button
           onClick={() => {
-            sendFeedback(selectedImages);
+            sendFeedback();
             toast.dismiss();
           }}
-          className="flex flex-row gap-1 rounded-md bg-green-400 p-0.5 hover:bg-green-600"
+          className="flex flex-row gap-1 rounded-md bg-green-400 p-0.5 px-1 hover:bg-green-600"
         >
           Confirm
           <IconCheck />
@@ -153,11 +176,11 @@ export default function App() {
     notify(content, 'warning');
   };
 
-  const sendFeedback = (selectedImages: number[]) => {
+  const sendFeedback = () => {
     const url = `${import.meta.env.VITE_API_URL}/feedback`;
     const formData = new FormData();
 
-    formData.append('selected_images', JSON.stringify(selectedImages));
+    formData.append('selected_images', JSON.stringify(flaggedImages));
     formData.append('document_id', documentId);
 
     fetch(url, {
@@ -175,11 +198,8 @@ export default function App() {
           return;
         }
 
-        // TODO: handle feedback response
         notify('Feedback sent', 'info');
-
-        // clearData();
-        // if (lastFile) predict(lastFile);
+        setFlaggedImages([]);
       })
       .catch((err) => {
         console.error(err);
@@ -192,20 +212,15 @@ export default function App() {
   };
 
   const handleLogout = () => {
-    const auth = getAuth();
     signOut(auth)
       .then(() => {
-        toast.success('Logout successful', {
-          position: 'bottom-right',
-        });
+        notify('Logout successful', 'success');
         setUser(null);
-        clearData();
+        // clearData();
       })
       .catch((err) => {
+        notify('Failed to logout', 'error');
         console.error('Failed to logout:', err);
-        toast.error('Failed to logout', {
-          position: 'bottom-right',
-        });
       });
   };
 
@@ -215,8 +230,9 @@ export default function App() {
         <div className="flex flex-col justify-center gap-4 lg:flex-row lg:flex-wrap">
           <div className="flex flex-col gap-4">
             <ImageDropzone
+              preview={imagePreview}
+              setPreview={setImagePreview}
               onUpload={(file: File) => {
-                // setLastFile(file);
                 clearData();
                 predict(file);
               }}
@@ -250,24 +266,46 @@ export default function App() {
                 <LoadingWheel />
               </div>
             )}
-            <PredictionsCarousel confidenceData={confidenceData} onUpdateBird={updateHabitatData} />
+            {!loading && (
+              <PredictionsCarousel
+                confidenceData={confidenceData}
+                onUpdateBird={updateHabitatData}
+                onClear={() => {
+                  setImagePreview('');
+                  clearData();
+                  notify('Data cleared', 'info');
+                }}
+              />
+            )}
           </div>
         </div>
         <ImageDrawer
           images={heatmapImages}
           overlay={boxmapImages}
           uploaded={loading}
-          sendFeedback={feedback}
+          selectedImages={flaggedImages}
+          setSelectedImages={setFlaggedImages}
+          onFeedback={feedback}
         />
 
-        <Footer />
+        <div className="flex flex-col gap-4 sm:flex-row">
+          <Footer className="order-2 flex-[3] sm:order-1" />
+          <UserBar
+            className="order-1 flex-[2] sm:order-2"
+            user={user}
+            handleLogin={() => setShowLogin(true)}
+            handleLogout={handleLogout}
+            handleHistory={() => setShowHistory(true)}
+          />
+        </div>
       </div>
 
-      <div className="fixed left-0 top-0 p-4">
+      <div className="fixed left-0 top-0 p-8">
         <label className="relative mb-2 flex w-fit transition-opacity duration-500 ease-in-out hover:opacity-60">
           <input
             type="checkbox"
             aria-label="Toggle between light and dark mode"
+            title="Toggle between light and dark mode"
             className="peer absolute appearance-none"
             checked={colorScheme === 'dark'}
             onChange={() => setColorScheme(colorScheme === 'dark' ? 'light' : 'dark')}
@@ -279,45 +317,34 @@ export default function App() {
           )}
         </label>
       </div>
-      <div className="fixed right-4 top-4">
-        {user ? (
-          <div className="flex items-center gap-4 rounded-lg bg-gray-200 p-2 shadow-lg dark:bg-gray-800">
-            <span className="font-medium text-black dark:text-white">
-              {user.displayName || user.email}
-            </span>
-            <button
-              onClick={handleLogout}
-              className="rounded bg-red-500 px-4 py-2 text-white hover:bg-red-700"
-            >
-              Logout
-            </button>
-            <button
-              onClick={() => setShowHistory(true)}
-              className="rounded bg-green-500 px-4 py-2 text-white hover:bg-green-700"
-            >
-              History
-            </button>
-          </div>
-        ) : (
-          <button
-            onClick={() => setShowLogin(true)}
-            className="rounded bg-blue-500 px-4 py-2 text-white hover:bg-blue-700"
-          >
-            Login/Register
-          </button>
-        )}
-      </div>
+
       {showLogin && (
         <LoginRegisterModal
           onClose={() => {
             setShowLogin(false);
-            clearData();
           }}
         />
       )}
+
       {showHistory && user && (
-        <UserHistory userId={user.uid} onClose={() => setShowHistory(false)} />
+        <UserHistory
+          userId={user.uid}
+          onClose={() => setShowHistory(false)}
+          onItemLoad={(item) => {
+            setShowHistory(false);
+            setImagePreview(item.imageUrl);
+            setData(
+              item.prediction,
+              item.confidence,
+              item.heatmapUrls,
+              item.boxmapUrls,
+              item.documentId,
+              item.flagged
+            );
+          }}
+        />
       )}
+
       <ToastContainer />
     </div>
   );
