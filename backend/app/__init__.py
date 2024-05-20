@@ -15,6 +15,7 @@ MODEL_INFO_PATH = MODEL_DIR / "bb100.npy"
 
 FIREBASE_COLLECTION = "predictions"
 FIREBASE_CREDENTIALS = os.environ.get("FIREBASE_CREDENTIALS", "{}")
+FIREBASE_TTL = int(os.environ.get("FIREBASE_TTL", 30))
 
 S3_BUCKET = os.environ.get("S3_BUCKET", "")
 S3_ACCESS = os.environ.get("S3_ACCESS", "")

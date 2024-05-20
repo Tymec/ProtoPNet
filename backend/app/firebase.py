@@ -1,11 +1,11 @@
 import json
-from datetime import datetime
+from datetime import datetime, timedelta
 
 import firebase_admin
 from firebase_admin import credentials, firestore
 from google.cloud.firestore_v1.base_query import FieldFilter
 
-from app import FIREBASE_COLLECTION, FIREBASE_CREDENTIALS
+from app import FIREBASE_COLLECTION, FIREBASE_CREDENTIALS, FIREBASE_TTL
 
 
 class FirebaseManager:
@@ -26,6 +26,7 @@ class FirebaseManager:
         user_id: str,
         flagged: list[str] = [],
     ) -> str:
+        current_timestamp = datetime.now()
         doc_ref = self.collection.add(
             {
                 "hash": image_hash,
@@ -36,7 +37,8 @@ class FirebaseManager:
                 "boxmaps": boxmaps,
                 "flagged": flagged,
                 "user_id": user_id,
-                "timestamp": datetime.now().isoformat(),
+                "timestamp": current_timestamp.isoformat(),
+                "expireAt": (current_timestamp + timedelta(days=FIREBASE_TTL)).isoformat(),
             }
         )
         return doc_ref[1].id
