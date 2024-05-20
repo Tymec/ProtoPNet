@@ -16,7 +16,9 @@ export default function PredictionsCarousel({
   onUpdateBird,
   onClear,
 }: PredictionsCarouselProps) {
-  const birdNames = Object.keys(confidenceData);
+  const birdNames = Object.keys(confidenceData).sort(
+    (a, b) => confidenceData[b] - confidenceData[a]
+  );
   const [curr, setCurr] = useState(0);
 
   const prev = () => setCurr((curr) => (curr === 0 ? birdNames.length - 1 : curr - 1));
